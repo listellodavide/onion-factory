@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/changes/01-create-initial-schema.yaml
   - include:
       file: db/changelog/changes/02-create-second-table.sql
+  - include:
+      file: db/changelog/changes/03-create-products-table.sql
