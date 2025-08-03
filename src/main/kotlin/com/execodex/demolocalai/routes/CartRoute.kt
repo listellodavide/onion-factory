@@ -1,6 +1,7 @@
 package com.execodex.demolocalai.routes
 
 import com.execodex.demolocalai.entities.Cart
+import com.execodex.demolocalai.entities.Order
 import com.execodex.demolocalai.handlers.CartHandler
 import com.execodex.demolocalai.pojos.AddCartItemRequest
 import com.execodex.demolocalai.pojos.CartResponse
@@ -145,6 +146,36 @@ class CartRoute(private val cartHandler: CartHandler) {
                     )
                 ]
             )
+        ),
+        RouterOperation(
+            path = "/users/{userId}/cart/checkout",
+            beanClass = CartHandler::class,
+            beanMethod = "checkout",
+            method = [org.springframework.web.bind.annotation.RequestMethod.POST],
+            operation = Operation(
+                operationId = "checkout",
+                summary = "Checkout cart",
+                description = "Creates an order with all items from the user's cart",
+                parameters = [
+                    Parameter(
+                        name = "userId",
+                        `in` = ParameterIn.PATH,
+                        required = true,
+                        description = "User ID"
+                    )
+                ],
+                responses = [
+                    ApiResponse(
+                        responseCode = "201",
+                        description = "Order created successfully",
+                        content = [Content(schema = Schema(implementation = Order::class))]
+                    ),
+                    ApiResponse(
+                        responseCode = "400",
+                        description = "Bad request, cart is empty or items not available"
+                    )
+                ]
+            )
         )
     )
     fun cartRoutes(): RouterFunction<ServerResponse> = router {
@@ -155,6 +186,7 @@ class CartRoute(private val cartHandler: CartHandler) {
                     POST("/items", cartHandler::addItemToCart)
                     DELETE("/items", cartHandler::removeItemFromCart)
                     DELETE("", cartHandler::emptyCart)
+                    POST("/checkout", cartHandler::checkout)
                 }
             }
         }

@@ -80,7 +80,7 @@ class CartService(
                 // Check if product exists and get its price if not provided
                 productRepository.findById(request.productId)
                     .flatMap { product ->
-                        val price = request.price ?: product.price
+                        val price = product.price
                         
                         // Check if item already exists in cart
                         cartItemRepository.findByCartIdAndProductId(cart.id!!, request.productId)

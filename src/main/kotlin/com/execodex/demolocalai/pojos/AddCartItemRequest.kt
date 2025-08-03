@@ -8,5 +8,5 @@ import java.math.BigDecimal
 data class AddCartItemRequest(
     val productId: Long,
     val quantity: Int,
-    val price: BigDecimal? = null // Optional, can be calculated from product price
+//    val price: BigDecimal? = null // Optional, can be calculated from product price
 )

@@ -69,5 +69,53 @@ public class ProductDemo {
         // Print response
         System.out.println("Fetch Product Response Status: " + fetchResponse.statusCode());
         System.out.println("Fetch Product Response Body: " + fetchResponse.body());
+        
+        // Create a second onion product (Red Onion)
+        System.out.println("\n\nCreating a second onion product...");
+        String redOnionJson = "{"
+            + "\"name\": \"Red Onion\","
+            + "\"description\": \"Sweet red onion, perfect for salads\","
+            + "\"price\": 2.49,"
+            + "\"quantity\": 75"
+            + "}";
+        
+        // Create HTTP request for creating the second product
+        HttpRequest createRedOnionRequest = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/products"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(redOnionJson))
+                .build();
+        
+        // Send request and get response
+        HttpResponse<String> createRedOnionResponse = client.send(createRedOnionRequest, HttpResponse.BodyHandlers.ofString());
+        
+        // Print response
+        System.out.println("Create Red Onion Response Status: " + createRedOnionResponse.statusCode());
+        System.out.println("Create Red Onion Response Body: " + createRedOnionResponse.body());
+        
+        // Extract the product ID from the response
+        String redOnionResponseBody = createRedOnionResponse.body();
+        // Simple parsing to extract ID - assumes the ID is in the format "id":123
+        int redOnionIdIndex = redOnionResponseBody.indexOf("\"id\":");
+        int redOnionCommaIndex = redOnionResponseBody.indexOf(",", redOnionIdIndex);
+        String redOnionIdStr = redOnionResponseBody.substring(redOnionIdIndex + 5, redOnionCommaIndex);
+        
+        System.out.println("Extracted Red Onion Product ID: " + redOnionIdStr);
+        
+        // Now fetch the created red onion product
+        System.out.println("\nFetching the created red onion product...");
+        
+        // Create HTTP request for fetching the red onion product
+        HttpRequest fetchRedOnionRequest = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/products/" + redOnionIdStr))
+                .GET()
+                .build();
+        
+        // Send request and get response
+        HttpResponse<String> fetchRedOnionResponse = client.send(fetchRedOnionRequest, HttpResponse.BodyHandlers.ofString());
+        
+        // Print response
+        System.out.println("Fetch Red Onion Response Status: " + fetchRedOnionResponse.statusCode());
+        System.out.println("Fetch Red Onion Response Body: " + fetchRedOnionResponse.body());
     }
 }

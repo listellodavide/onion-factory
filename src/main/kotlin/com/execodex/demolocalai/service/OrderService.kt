@@ -139,4 +139,59 @@ class OrderService(
                 orderRepository.save(updatedOrder)
             }
     }
+    
+    /**
+     * Create a new order with items for a specific user ID.
+     *
+     * @param userId the ID of the user
+     * @param items the list of order items
+     * @return a Mono containing the created order
+     */
+    fun createOrderForUser(userId: Long, items: List<com.execodex.demolocalai.pojos.OrderItemRequest>): Mono<Order> {
+        // Collect product information for all items
+        val productItemsMono = Flux.fromIterable(items)
+            .flatMap { item ->
+                productRepository.findById(item.productId)
+                    .switchIfEmpty(Mono.error(IllegalArgumentException("Product not found: ${item.productId}")))
+                    .map { product -> Pair(product, item.quantity) }
+            }
+            .collectList()
+
+        // Calculate total amount and create order
+        return productItemsMono
+            .flatMap { productItems ->
+                // Calculate total amount
+                val totalAmount = productItems.fold(BigDecimal.ZERO) { acc, pair ->
+                    val (product, quantity) = pair
+                    acc.add(product.price.multiply(BigDecimal(quantity)))
+                }
+                
+                // Create and save the order
+                val order = Order(
+                    userId = userId,
+                    totalAmount = totalAmount,
+                    orderDate = LocalDateTime.now(),
+                    status = "PENDING"
+                )
+                
+                orderRepository.save(order)
+                    .flatMap { savedOrder ->
+                        // Create and save order items
+                        val orderItems = productItems.map { pair ->
+                            val (product, quantity) = pair
+                            OrderItem(
+                                orderId = savedOrder.id,
+                                productId = product.id!!,
+                                quantity = quantity,
+                                price = product.price
+                            )
+                        }
+                        
+                        Flux.fromIterable(orderItems)
+                            .flatMap { orderItem -> orderItemRepository.save(orderItem) }
+                            .collectList()
+                            .thenReturn(savedOrder)
+                    }
+            }
+    }
 }
