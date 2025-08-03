@@ -85,4 +85,18 @@ class OrderHandler(private val orderService: OrderService) {
         return ServerResponse.ok()
             .body(orderService.getOrderItemsByOrderId(orderId), OrderItem::class.java)
     }
+
+    /**
+     * Update an existing order.
+     *
+     * @param request the server request containing the order ID and updated data
+     * @return a server response containing the updated order if found
+     */
+    fun updateOrder(request: ServerRequest): Mono<ServerResponse> {
+        val id = request.pathVariable("id").toLong()
+        return request.bodyToMono<Order>()
+            .flatMap { order -> orderService.updateOrder(id, order) }
+            .flatMap { updatedOrder -> ServerResponse.ok().bodyValue(updatedOrder) }
+            .switchIfEmpty(ServerResponse.notFound().build())
+    }
 }

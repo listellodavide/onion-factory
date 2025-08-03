@@ -1,9 +1,18 @@
+# Demo Local AI
+
+## Prerequisites
 1. You need Java and Docker installed on your machine.
 2. You also need to have the ai/smollm2 model downloaded and available in your Docker environment.
-3. Clone the repository.
-4. Run the following command to build the project:
+
+## Getting Started
+1. Clone the repository.
+2. Run the following command to build the project:
    ```bash
    ./gradlew build
+   ```
+3. Start the application:
+   ```bash
+   ./gradlew bootRun
    ```
 
 ## Integration Testing
@@ -29,6 +38,19 @@ The repository includes a shell script to interact with the server's greeting en
    # Greeting with a name parameter
    ./greet-client.sh YourName
    ```
+
+## API Documentation
+
+The application includes Swagger/OpenAPI documentation for all REST endpoints. Once the application is running, you can access:
+
+- Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- OpenAPI JSON: [http://localhost:8080/api-docs](http://localhost:8080/api-docs)
+
+The API documentation provides detailed information about all available endpoints, including:
+- Request parameters
+- Request bodies
+- Response formats
+- Response codes
 
 ## Troubleshooting
 If you encounter issues, ensure that:

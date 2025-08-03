@@ -120,4 +120,23 @@ class OrderService(
      * @return a Flux containing the order items if found
      */
     fun getOrderItemsByOrderId(orderId: Long): Flux<OrderItem> = orderItemRepository.findByOrderId(orderId)
+
+    /**
+     * Update an existing order.
+     *
+     * @param id the ID of the order to update
+     * @param order the updated order data
+     * @return a Mono containing the updated order if found
+     */
+    fun updateOrder(id: Long, order: Order): Mono<Order> {
+        return orderRepository.findById(id)
+            .flatMap { existingOrder ->
+                // Preserve the original ID and update other fields
+                val updatedOrder = order.copy(
+                    id = existingOrder.id,
+                    orderDate = order.orderDate ?: existingOrder.orderDate
+                )
+                orderRepository.save(updatedOrder)
+            }
+    }
 }
