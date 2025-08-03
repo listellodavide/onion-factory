@@ -5,7 +5,21 @@
    ```bash
    ./gradlew build
    ```
+
+## Using the Greet Client Script
+
+The repository includes a shell script to interact with the server's greeting endpoint:
+
+1. Make sure the server is running on localhost:8080
+2. Use the script to make GET requests to the greet endpoint:
+   ```bash
+   # Basic greeting
+   ./greet-client.sh
    
+   # Greeting with a name parameter
+   ./greet-client.sh YourName
+   ```
+
 ## Troubleshooting
 If you encounter issues, ensure that:
 1. stop and remove all containers and volumes:
