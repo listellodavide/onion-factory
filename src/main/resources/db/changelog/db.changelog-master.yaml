@@ -11,3 +11,9 @@ databaseChangeLog:
       file: db/changelog/changes/05-create-orders-table.sql
   - include:
       file: db/changelog/changes/06-create-order-details-table.sql
+  - include:
+      file: db/changelog/changes/07-create-shipping-address-table.sql
+  - include:
+      file: db/changelog/changes/08-create-cart-table.sql
+  - include:
+      file: db/changelog/changes/09-create-cart-items-table.sql
