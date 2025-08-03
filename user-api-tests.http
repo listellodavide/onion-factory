@@ -1,0 +1,42 @@
+### Get all users
+GET http://localhost:8080/users
+Accept: application/json
+
+### Create a new user
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "password123",
+  "email": "testuser@example.com"
+}
+
+### Get user by ID (replace {id} with an actual ID)
+GET http://localhost:8080/users/1
+Accept: application/json
+
+### Update user (replace {id} with an actual ID)
+PUT http://localhost:8080/users/1
+Content-Type: application/json
+
+{
+  "username": "updateduser",
+  "password": "newpassword123",
+  "email": "updated@example.com"
+}
+
+### Delete user (replace {id} with an actual ID)
+DELETE http://localhost:8080/users/1
+
+### Search users by username pattern
+GET http://localhost:8080/users/search?username=test
+Accept: application/json
+
+### Get user by username
+GET http://localhost:8080/users/username/testuser
+Accept: application/json
+
+### Get user by email
+GET http://localhost:8080/users/email?email=testuser@example.com
+Accept: application/json
