@@ -1,0 +1,47 @@
+### Create a new order
+POST http://localhost:8080/orders
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2
+    },
+    {
+      "productId": 2,
+      "quantity": 1
+    }
+  ]
+}
+
+### Create an order without username (anonymous order)
+POST http://localhost:8080/orders
+Content-Type: application/json
+
+{
+  "username": null,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 3
+    }
+  ]
+}
+
+### Get all orders
+GET http://localhost:8080/orders
+Accept: application/json
+
+### Get order by ID (replace {id} with an actual ID)
+GET http://localhost:8080/orders/1
+Accept: application/json
+
+### Get orders by user ID (replace {userId} with an actual user ID)
+GET http://localhost:8080/orders/user/1
+Accept: application/json
+
+### Get order items by order ID (replace {orderId} with an actual order ID)
+GET http://localhost:8080/orders/1/items
+Accept: application/json
