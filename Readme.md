@@ -6,6 +6,16 @@
    ./gradlew build
    ```
 
+## Integration Testing
+
+You can run the Java client integration test using the Gradle task:
+
+```bash
+./gradlew greetIntegrationTest
+```
+
+This task executes the greet-client-java.sh script to test the greet endpoint. Make sure the server is running before executing this task.
+
 ## Using the Greet Client Script
 
 The repository includes a shell script to interact with the server's greeting endpoint:

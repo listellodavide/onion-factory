@@ -52,3 +52,13 @@ You can use the provided test script to verify that the Java client works correc
 ```
 
 This will test the client both with and without a name parameter.
+
+### Gradle Integration Test
+
+You can also run the Java client as an integration test using Gradle:
+
+```bash
+./gradlew greetIntegrationTest
+```
+
+This Gradle task executes the greet-client-java.sh script in the correct working directory. Make sure the server is running on localhost:8080 before executing this task.

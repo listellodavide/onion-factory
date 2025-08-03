@@ -36,7 +36,11 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-reactor'
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.liquibase:liquibase-core'
+    implementation 'io.r2dbc:r2dbc-postgresql:0.8.13.RELEASE'
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
     developmentOnly 'org.springframework.ai:spring-ai-spring-boot-docker-compose'
@@ -46,6 +50,7 @@ dependencies {
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test'
+    testImplementation 'io.r2dbc:r2dbc-h2'
     runtimeOnly 'org.postgresql:postgresql'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -64,4 +69,24 @@ kotlin {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// Integration test task to run the greet-client-java.sh script
+task greetIntegrationTest(type: Exec) {
+    group = 'Verification'
+    description = 'Runs the greet-client-java.sh script to test the greet endpoint'
+    
+    // Set working directory to the scripts directory where GreetClient.java is located
+    workingDir = file("${projectDir}/src/integrationTest/scripts")
+    commandLine 'sh', './greet-client-java.sh'
+    
+    // Make the task depend on bootRun to ensure the application is running
+    // Note: This requires the application to be started separately
+    doFirst {
+        println "Running greet client integration test..."
+    }
+    
+    doLast {
+        println "Greet client integration test completed."
+    }
 }
