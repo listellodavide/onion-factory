@@ -14,6 +14,7 @@ class HelloRoute(private val helloHandler: HelloHandler) {
     fun helloRoutes(): RouterFunction<ServerResponse> = router {
         GET("/hello", helloHandler::sayHello)
         GET("/hello/{name}", helloHandler::sayHelloWithName)
+        GET("/greet/{name}", helloHandler::greet)
         GET("/greet", helloHandler::greet)
     }
 }
