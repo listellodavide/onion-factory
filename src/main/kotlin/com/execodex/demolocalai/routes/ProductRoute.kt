@@ -50,6 +50,36 @@ class ProductRoute(private val productHandler: ProductHandler) {
             )
         ),
         RouterOperation(
+            path = "/products/name/{slug}",
+            beanClass = ProductHandler::class,
+            beanMethod = "getProductBySlug",
+            method = [org.springframework.web.bind.annotation.RequestMethod.GET],
+            operation = Operation(
+                operationId = "getProductBySlug",
+                summary = "Get product by slug",
+                description = "Returns a single product by its slug",
+                parameters = [
+                    Parameter(
+                        name = "slug",
+                        `in` = ParameterIn.PATH,
+                        required = true,
+                        description = "Product slug"
+                    )
+                ],
+                responses = [
+                    ApiResponse(
+                        responseCode = "200",
+                        description = "Successful operation",
+                        content = [Content(schema = Schema(implementation = Product::class))]
+                    ),
+                    ApiResponse(
+                        responseCode = "404",
+                        description = "Product not found"
+                    )
+                ]
+            )
+        ),
+        RouterOperation(
             path = "/products/{id}",
             beanClass = ProductHandler::class,
             beanMethod = "getProductById",
@@ -195,6 +225,7 @@ class ProductRoute(private val productHandler: ProductHandler) {
         "/products".nest {
             accept(MediaType.APPLICATION_JSON).nest {
                 GET("", productHandler::getAllProducts)
+                GET("/name/{slug}", productHandler::getProductBySlug)
                 GET("/search", productHandler::searchProducts)
                 GET("/{id}", productHandler::getProductById)
                 POST("", productHandler::createProduct)

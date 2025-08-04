@@ -26,4 +26,20 @@ interface ProductRepository : ReactiveCrudRepository<Product, Long> {
      * @return a Flux of products matching the pattern
      */
     fun findByNameContainingIgnoreCase(namePattern: String): Flux<Product>
-}
+
+    /**
+     * Find a product by its SKU.
+     *
+     * @param sku the SKU of the product
+     * @return a Mono containing the product if found
+     */
+    fun findBySku(sku: String): Mono<Product>
+    
+    /**
+     * Find a product by its slug.
+     *
+     * @param slug the slug of the product
+     * @return a Mono containing the product if found
+     */
+    fun findBySlug(slug: String): Mono<Product>
+    }

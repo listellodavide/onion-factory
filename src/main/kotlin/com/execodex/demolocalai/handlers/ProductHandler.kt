@@ -1,6 +1,7 @@
 package com.execodex.demolocalai.handlers
 
 import com.execodex.demolocalai.entities.Product
+import com.execodex.demolocalai.handlers.errors.ProductErrorHandler
 import com.execodex.demolocalai.service.ProductService
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
@@ -13,7 +14,10 @@ import java.net.URI
  * Handler for product-related HTTP requests.
  */
 @Component
-class ProductHandler(private val productService: ProductService) {
+class ProductHandler(
+    private val productService: ProductService,
+    private val productErrorHandler: ProductErrorHandler
+) {
 
     /**
      * Get all products.
@@ -24,6 +28,13 @@ class ProductHandler(private val productService: ProductService) {
     fun getAllProducts(request: ServerRequest): Mono<ServerResponse> {
         return ServerResponse.ok()
             .body(productService.getAllProducts(), Product::class.java)
+    }
+
+    fun getProductBySlug(request: ServerRequest): Mono<ServerResponse> {
+        val slug = request.pathVariable("slug")
+        return productService.getProductBySlug(slug)
+            .flatMap { product -> ServerResponse.ok().bodyValue(product) }
+            .switchIfEmpty(ServerResponse.notFound().build())
     }
 
     /**
@@ -47,11 +58,16 @@ class ProductHandler(private val productService: ProductService) {
      */
     fun createProduct(request: ServerRequest): Mono<ServerResponse> {
         return request.bodyToMono<Product>()
-            .flatMap { product -> productService.createProduct(product) }
+            .flatMap { product -> 
+                println("ProductHandler: Creating product with SKU ${product.sku}")
+                productService.createProduct(product) 
+            }
             .flatMap { savedProduct ->
+                println("ProductHandler: Product created successfully with ID ${savedProduct.id}")
                 ServerResponse.created(URI.create("/products/${savedProduct.id}"))
                     .bodyValue(savedProduct)
             }
+            .onErrorResume(productErrorHandler::handleError)
     }
 
     /**

@@ -23,6 +23,7 @@ public class ProductDemo {
         
         // Create a sample onion product
         String productJson = "{"
+            + "\"sku\": \"YEL-ONI-001\","
             + "\"name\": \"Yellow Onion\","
             + "\"description\": \"Fresh yellow onion, locally grown\","
             + "\"price\": 1.99,"
@@ -44,6 +45,18 @@ public class ProductDemo {
         // Print response
         System.out.println("Create Product Response Status: " + createResponse.statusCode());
         System.out.println("Create Product Response Body: " + createResponse.body());
+        
+        // Check if slug is present in the response
+        if (createResponse.body().contains("\"slug\":")) {
+            System.out.println("Slug field is present in the response!");
+            // Extract the slug from the response
+            int slugIndex = createResponse.body().indexOf("\"slug\":");
+            int slugEndIndex = createResponse.body().indexOf(",", slugIndex);
+            String slug = createResponse.body().substring(slugIndex + 8, slugEndIndex - 1);
+            System.out.println("Generated Slug: " + slug);
+        } else {
+            System.out.println("WARNING: Slug field is not present in the response!");
+        }
         
         // Extract the product ID from the response
         String responseBody = createResponse.body();
@@ -73,6 +86,7 @@ public class ProductDemo {
         // Create a second onion product (Red Onion)
         System.out.println("\n\nCreating a second onion product...");
         String redOnionJson = "{"
+            + "\"sku\": \"RED-ONI-001\","
             + "\"name\": \"Red Onion\","
             + "\"description\": \"Sweet red onion, perfect for salads\","
             + "\"price\": 2.49,"
@@ -92,6 +106,18 @@ public class ProductDemo {
         // Print response
         System.out.println("Create Red Onion Response Status: " + createRedOnionResponse.statusCode());
         System.out.println("Create Red Onion Response Body: " + createRedOnionResponse.body());
+        
+        // Check if slug is present in the response
+        if (createRedOnionResponse.body().contains("\"slug\":")) {
+            System.out.println("Slug field is present in the Red Onion response!");
+            // Extract the slug from the response
+            int slugIndex = createRedOnionResponse.body().indexOf("\"slug\":");
+            int slugEndIndex = createRedOnionResponse.body().indexOf(",", slugIndex);
+            String slug = createRedOnionResponse.body().substring(slugIndex + 8, slugEndIndex - 1);
+            System.out.println("Generated Slug for Red Onion: " + slug);
+        } else {
+            System.out.println("WARNING: Slug field is not present in the Red Onion response!");
+        }
         
         // Extract the product ID from the response
         String redOnionResponseBody = createRedOnionResponse.body();
