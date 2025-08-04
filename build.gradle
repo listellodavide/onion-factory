@@ -43,6 +43,9 @@ dependencies {
     
     // OpenAPI Documentation
     implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.4.0'
+    // Stripe API for payment processing
+    implementation 'com.stripe:stripe-java:29.4.0'
+
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'

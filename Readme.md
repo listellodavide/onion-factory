@@ -3,6 +3,7 @@
 ## Prerequisites
 1. You need Java and Docker installed on your machine.
 2. You also need to have the ai/smollm2 model downloaded and available in your Docker environment.
+3. You need a test: STRIPE_API_SECRETKEY
 
 ## Getting Started
 1. Clone the repository.
@@ -51,6 +52,10 @@ The API documentation provides detailed information about all available endpoint
 - Request bodies
 - Response formats
 - Response codes
+
+## integration with Stripe
+Add in your environment variables:
+STRIPE_API_SECRETKEY
 
 ## Troubleshooting
 If you encounter issues, ensure that:
