@@ -6,7 +6,10 @@ import com.execodex.demolocalai.pojos.CreateCheckoutSessionRequest
 import com.execodex.demolocalai.pojos.CreatePaymentIntentRequest
 import com.execodex.demolocalai.pojos.PaymentConfirmationResponse
 import com.execodex.demolocalai.pojos.PaymentIntentResponse
+import com.execodex.demolocalai.pojos.StripeWebhookRequest
+import com.execodex.demolocalai.pojos.WebhookResponse
 import com.execodex.demolocalai.service.StripeService
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
@@ -18,6 +21,7 @@ import reactor.core.publisher.Mono
  */
 @Component
 class StripePaymentHandler(private val stripeService: StripeService) {
+    private val logger = LoggerFactory.getLogger(StripePaymentHandler::class.java)
 
     /**
      * Create a payment intent for an order.
@@ -111,6 +115,51 @@ class StripePaymentHandler(private val stripeService: StripeService) {
                     is IllegalArgumentException -> ServerResponse.badRequest().bodyValue(error.message ?: "Bad request")
                     else -> ServerResponse.status(500).bodyValue("Internal server error: ${error.message}")
                 }
+            }
+    }
+    
+    /**
+     * Handle Stripe webhook events.
+     * This endpoint receives webhook notifications from Stripe when payment events occur.
+     *
+     * @param request the server request containing the Stripe event data
+     * @return a server response acknowledging receipt of the webhook
+     */
+    fun handleWebhook(request: ServerRequest): Mono<ServerResponse> {
+        logger.info("Received Stripe webhook request")
+        
+        return request.bodyToMono<StripeWebhookRequest>()
+            .flatMap { webhookRequest ->
+                logger.info("Processing webhook event: ${webhookRequest.type} with ID: ${webhookRequest.id}")
+                
+                stripeService.handleWebhookEvent(webhookRequest)
+                    .map { order ->
+                        WebhookResponse(
+                            received = true,
+                            eventId = webhookRequest.id
+                        )
+                    }
+                    .switchIfEmpty(
+                        Mono.just(
+                            WebhookResponse(
+                                received = true,
+                                eventId = webhookRequest.id
+                            )
+                        )
+                    )
+            }
+            .flatMap { response -> ServerResponse.ok().bodyValue(response) }
+            .onErrorResume { error ->
+                logger.error("Error processing webhook: ${error.message}", error)
+                
+                val errorResponse = WebhookResponse(
+                    received = false,
+                    eventId = "unknown"
+                )
+                
+                // Always return 200 OK to Stripe, even for errors
+                // This prevents Stripe from retrying the webhook unnecessarily
+                ServerResponse.ok().bodyValue(errorResponse)
             }
     }
 }

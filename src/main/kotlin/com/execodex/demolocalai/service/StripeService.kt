@@ -1,13 +1,17 @@
 package com.execodex.demolocalai.service
 
 import com.execodex.demolocalai.entities.Order
+import com.execodex.demolocalai.pojos.StripeWebhookRequest
 import com.execodex.demolocalai.repositories.ProductRepository
 import com.stripe.Stripe
+import com.stripe.model.Event
+import com.stripe.model.EventDataObjectDeserializer
 import com.stripe.model.PaymentIntent
 import com.stripe.model.checkout.Session
 import com.stripe.param.PaymentIntentCreateParams
 import com.stripe.param.checkout.SessionCreateParams
 import jakarta.annotation.PostConstruct
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
@@ -22,6 +26,8 @@ class StripeService(
     private val orderService: OrderService,
     private val productRepository: ProductRepository
 ) {
+    private val logger = LoggerFactory.getLogger(StripeService::class.java)
+    
     @PostConstruct
     fun init() {
         Stripe.apiKey = secretKey
@@ -116,6 +122,11 @@ class StripeService(
                                 .setSuccessUrl(successUrl)
                                 .setCancelUrl(cancelUrl)
                                 .putMetadata("orderId", order.id.toString())
+                                .setPaymentIntentData(
+                                    SessionCreateParams.PaymentIntentData.builder()
+                                        .putMetadata("orderId", order.id.toString())
+                                        .build()
+                                )
 
                             // Add each order item as a line item
                             orderItemsWithProducts.forEach { (item, product) ->
@@ -145,5 +156,59 @@ class StripeService(
                         }
                     }
             }
+    }
+    
+    /**
+     * Handle Stripe webhook events.
+     * This method processes various Stripe events like payment_intent.succeeded,
+     * checkout.session.completed, etc.
+     *
+     * @param webhookRequest the webhook event data from Stripe
+     * @return a Mono containing the processed order (if applicable)
+     */
+    fun handleWebhookEvent(webhookRequest: StripeWebhookRequest): Mono<Order?> {
+        logger.info("Received Stripe webhook event: ${webhookRequest.type} with ID: ${webhookRequest.id}")
+        logger.info("Webhook event data: ${webhookRequest.data.`object`}")
+        return when (webhookRequest.type) {
+            "checkout.session.completed" -> {
+                // Handle successful checkout session
+                val sessionId = webhookRequest.data.`object`.id
+                val orderId = webhookRequest.data.`object`.metadata?.get("orderId")?.toLong()
+                    ?: return Mono.error(IllegalStateException("Order ID not found in session metadata"))
+                
+                logger.info("Processing completed checkout session: $sessionId for order: $orderId")
+                
+                // Update order status to PAID
+                orderService.getOrderById(orderId)
+                    .switchIfEmpty(Mono.error(IllegalStateException("Order not found: $orderId")))
+                    .flatMap { order ->
+                        val updatedOrder = order.copy(status = "PAID")
+                        orderService.updateOrder(orderId, updatedOrder)
+                    }
+            }
+            
+            "payment_intent.succeeded" -> {
+                // Handle successful payment intent
+                val paymentIntentId = webhookRequest.data.`object`.id
+                val orderId = webhookRequest.data.`object`.metadata?.get("orderId")?.toLong()
+                    ?: return Mono.error(IllegalStateException("Order ID not found in payment intent metadata"))
+                
+                logger.info("Processing succeeded payment intent: $paymentIntentId for order: $orderId")
+                
+                // Update order status to PAID
+                orderService.getOrderById(orderId)
+                    .switchIfEmpty(Mono.error(IllegalStateException("Order not found: $orderId")))
+                    .flatMap { order ->
+                        val updatedOrder = order.copy(status = "PAID")
+                        orderService.updateOrder(orderId, updatedOrder)
+                    }
+            }
+            
+            else -> {
+                // Log other events but don't process them
+                logger.info("Received unhandled Stripe event type: ${webhookRequest.type}")
+                Mono.empty()
+            }
+        }
     }
 }
