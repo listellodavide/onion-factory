@@ -1,6 +1,7 @@
 package com.execodex.demolocalai.handlers
 
 import com.execodex.demolocalai.entities.User
+import com.execodex.demolocalai.handlers.errors.UserErrorHandler
 import com.execodex.demolocalai.service.UserService
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
@@ -13,7 +14,10 @@ import java.net.URI
  * Handler for user-related HTTP requests.
  */
 @Component
-class UserHandler(private val userService: UserService) {
+class UserHandler(
+    private val userService: UserService,
+    private val userErrorHandler: UserErrorHandler
+) {
 
     /**
      * Get all users.
@@ -51,6 +55,9 @@ class UserHandler(private val userService: UserService) {
             .flatMap { savedUser ->
                 ServerResponse.created(URI.create("/users/${savedUser.id}"))
                     .bodyValue(savedUser)
+            }
+            .onErrorResume { error ->
+                userErrorHandler.handleError(error)
             }
     }
 
