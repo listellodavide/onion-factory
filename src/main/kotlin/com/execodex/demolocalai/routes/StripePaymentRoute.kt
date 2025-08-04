@@ -124,6 +124,33 @@ class StripePaymentRoute(private val stripePaymentHandler: StripePaymentHandler)
                     )
                 ]
             )
+        ),
+        RouterOperation(
+            path = "/api/payments/webhook",
+            beanClass = StripePaymentHandler::class,
+            beanMethod = "handleWebhook",
+            method = [org.springframework.web.bind.annotation.RequestMethod.POST],
+            operation = io.swagger.v3.oas.annotations.Operation(
+                operationId = "handleWebhook",
+                summary = "Handle Stripe webhook events",
+                description = "Processes webhook notifications from Stripe for payment events",
+                requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = [io.swagger.v3.oas.annotations.media.Content(
+                        schema = io.swagger.v3.oas.annotations.media.Schema(implementation = com.execodex.demolocalai.pojos.StripeWebhookRequest::class)
+                    )]
+                ),
+                responses = [
+                    io.swagger.v3.oas.annotations.responses.ApiResponse(
+                        responseCode = "200",
+                        description = "Webhook processed successfully",
+                        content = [io.swagger.v3.oas.annotations.media.Content(
+                            schema = io.swagger.v3.oas.annotations.media.Schema(implementation = com.execodex.demolocalai.pojos.WebhookResponse::class)
+                        )
+                        ]
+                    )
+                ]
+            )
         )
     )
 
@@ -148,6 +175,9 @@ class StripePaymentRoute(private val stripePaymentHandler: StripePaymentHandler)
             
             // Create a checkout session for an order
             POST("/create-checkout", stripePaymentHandler::createCheckoutSession)
+            
+            // Handle Stripe webhook events
+            POST("/webhook", stripePaymentHandler::handleWebhook)
         }
     }
 }
