@@ -7,11 +7,11 @@ import com.stripe.model.PaymentIntent
 import com.stripe.model.checkout.Session
 import com.stripe.param.PaymentIntentCreateParams
 import com.stripe.param.checkout.SessionCreateParams
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
-import jakarta.annotation.PostConstruct
 
 /**
  * Service for handling Stripe payment operations.
@@ -40,7 +40,7 @@ class StripeService(
                 Mono.fromCallable {
                     // Convert BigDecimal to cents (long) for Stripe
                     val amountInCents = order.totalAmount.multiply(BigDecimal(100)).toLong()
-                    
+
                     val params = PaymentIntentCreateParams.builder()
                         .setAmount(amountInCents)
                         .setCurrency("usd")
@@ -52,7 +52,7 @@ class StripeService(
                                 .build()
                         )
                         .build()
-                    
+
                     PaymentIntent.create(params)
                 }
             }
@@ -67,14 +67,14 @@ class StripeService(
     fun confirmPayment(paymentIntentId: String): Mono<Order> {
         return Mono.fromCallable {
             val paymentIntent = PaymentIntent.retrieve(paymentIntentId)
-            
+
             if (paymentIntent.status != "succeeded") {
                 throw IllegalStateException("Payment not successful. Status: ${paymentIntent.status}")
             }
-            
-            val orderId = paymentIntent.metadata["orderId"]?.toLong() 
+
+            val orderId = paymentIntent.metadata["orderId"]?.toLong()
                 ?: throw IllegalStateException("Order ID not found in payment metadata")
-                
+
             orderId
         }.flatMap { orderId ->
             orderService.getOrderById(orderId)
@@ -85,7 +85,7 @@ class StripeService(
                 }
         }
     }
-    
+
     /**
      * Create a Checkout Session for an order.
      *
@@ -109,19 +109,19 @@ class StripeService(
                         if (orderItemsWithProducts.isEmpty()) {
                             return@flatMap Mono.error(IllegalArgumentException("No items found for order: $orderId"))
                         }
-                    
+
                         Mono.fromCallable {
                             val paramsBuilder = SessionCreateParams.builder()
                                 .setMode(SessionCreateParams.Mode.PAYMENT)
                                 .setSuccessUrl(successUrl)
                                 .setCancelUrl(cancelUrl)
                                 .putMetadata("orderId", order.id.toString())
-                        
+
                             // Add each order item as a line item
                             orderItemsWithProducts.forEach { (item, product) ->
                                 // Convert BigDecimal to cents (long) for Stripe
                                 val itemAmountInCents = item.price.multiply(BigDecimal(100)).toLong()
-                            
+
                                 paramsBuilder.addLineItem(
                                     SessionCreateParams.LineItem.builder()
                                         .setQuantity(item.quantity.toLong())
@@ -140,7 +140,7 @@ class StripeService(
                                         .build()
                                 )
                             }
-                        
+
                             Session.create(paramsBuilder.build())
                         }
                     }
