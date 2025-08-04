@@ -1,6 +1,7 @@
 package com.execodex.demolocalai.service
 
 import com.execodex.demolocalai.entities.Order
+import com.execodex.demolocalai.repositories.ProductRepository
 import com.stripe.Stripe
 import com.stripe.model.PaymentIntent
 import com.stripe.model.checkout.Session
@@ -18,7 +19,8 @@ import jakarta.annotation.PostConstruct
 @Service
 class StripeService(
     @Value("\${stripe.api.secretKey}") private val secretKey: String,
-    private val orderService: OrderService
+    private val orderService: OrderService,
+    private val productRepository: ProductRepository
 ) {
     @PostConstruct
     fun init() {
@@ -96,36 +98,52 @@ class StripeService(
         return orderService.getOrderById(orderId)
             .switchIfEmpty(Mono.error(IllegalArgumentException("Order not found: $orderId")))
             .flatMap { order ->
-                Mono.fromCallable {
-                    // Convert BigDecimal to cents (long) for Stripe
-                    val amountInCents = order.totalAmount.multiply(BigDecimal(100)).toLong()
+                orderService.getOrderItemsByOrderId(orderId)
+                    .flatMap { orderItem ->
+                        // Fetch product details for each order item
+                        productRepository.findById(orderItem.productId)
+                            .map { product -> Pair(orderItem, product) }
+                    }
+                    .collectList()
+                    .flatMap { orderItemsWithProducts ->
+                        if (orderItemsWithProducts.isEmpty()) {
+                            return@flatMap Mono.error(IllegalArgumentException("No items found for order: $orderId"))
+                        }
                     
-                    val params = SessionCreateParams.builder()
-                        .setMode(SessionCreateParams.Mode.PAYMENT)
-                        .setSuccessUrl(successUrl)
-                        .setCancelUrl(cancelUrl)
-                        .addLineItem(
-                            SessionCreateParams.LineItem.builder()
-                                .setQuantity(1L)
-                                .setPriceData(
-                                    SessionCreateParams.LineItem.PriceData.builder()
-                                        .setCurrency("usd")
-                                        .setUnitAmount(amountInCents)
-                                        .setProductData(
-                                            SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                                                .setName("Order #${order.id}")
-                                                .setDescription("Payment for Order #${order.id}")
+                        Mono.fromCallable {
+                            val paramsBuilder = SessionCreateParams.builder()
+                                .setMode(SessionCreateParams.Mode.PAYMENT)
+                                .setSuccessUrl(successUrl)
+                                .setCancelUrl(cancelUrl)
+                                .putMetadata("orderId", order.id.toString())
+                        
+                            // Add each order item as a line item
+                            orderItemsWithProducts.forEach { (item, product) ->
+                                // Convert BigDecimal to cents (long) for Stripe
+                                val itemAmountInCents = item.price.multiply(BigDecimal(100)).toLong()
+                            
+                                paramsBuilder.addLineItem(
+                                    SessionCreateParams.LineItem.builder()
+                                        .setQuantity(item.quantity.toLong())
+                                        .setPriceData(
+                                            SessionCreateParams.LineItem.PriceData.builder()
+                                                .setCurrency("eur")
+                                                .setUnitAmount(itemAmountInCents)
+                                                .setProductData(
+                                                    SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                        .setName(product.name)
+                                                        .setDescription("Order #${order.id} - ${product.name}")
+                                                        .build()
+                                                )
                                                 .build()
                                         )
                                         .build()
                                 )
-                                .build()
-                        )
-                        .putMetadata("orderId", order.id.toString())
-                        .build()
-                    
-                    Session.create(params)
-                }
+                            }
+                        
+                            Session.create(paramsBuilder.build())
+                        }
+                    }
             }
     }
 }
