@@ -40,3 +40,4 @@ out/
 .kotlin
 
 secrets.txt
+./secrets.txt
