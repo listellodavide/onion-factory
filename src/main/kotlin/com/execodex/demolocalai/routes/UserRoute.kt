@@ -255,12 +255,12 @@ class UserRoute(private val userHandler: UserHandler) {
         "/users".nest {
             accept(MediaType.APPLICATION_JSON).nest {
                 GET("", userHandler::getAllUsers)
+                GET("/search", userHandler::searchUsers)
+                GET("/username/{username}", userHandler::getUserByUsername)
                 GET("/{id}", userHandler::getUserById)
                 POST("", userHandler::createUser)
                 PUT("/{id}", userHandler::updateUser)
                 DELETE("/{id}", userHandler::deleteUser)
-                GET("/search", userHandler::searchUsers)
-                GET("/username/{username}", userHandler::getUserByUsername)
                 GET("/email", userHandler::getUserByEmail)
             }
         }
