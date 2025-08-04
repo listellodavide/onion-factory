@@ -33,6 +33,20 @@ public class CreateUsers {
             "securepass456", 
             "jane.smith@example.com", 
             "Jane Smith");
+            
+        // Create and fetch third user (Davide)
+        createAndFetchUser(client, 
+            "davide", 
+            "davide123", 
+            "davide@example.com", 
+            "Davide");
+            
+        // Create and fetch fourth user (Inna)
+        createAndFetchUser(client, 
+            "inna2", 
+            "inna456", 
+            "inna@example.com",
+            "Inna");
     }
     
     /**

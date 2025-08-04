@@ -18,7 +18,7 @@ class UserErrorHandler {
     }
 
 
-    public val handleError: (Throwable) -> Mono<ServerResponse> = { error ->
+    val handleError: (Throwable) -> Mono<ServerResponse> = { error ->
         exceptionHandler.getOrDefault(
             error::class.java,
             { e ->
