@@ -1,0 +1,149 @@
+package com.execodex.demolocalai.service
+
+import com.execodex.demolocalai.entities.Order
+import com.execodex.demolocalai.repositories.ProductRepository
+import com.stripe.Stripe
+import com.stripe.model.PaymentIntent
+import com.stripe.model.checkout.Session
+import com.stripe.param.PaymentIntentCreateParams
+import com.stripe.param.checkout.SessionCreateParams
+import jakarta.annotation.PostConstruct
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Service
+import reactor.core.publisher.Mono
+import java.math.BigDecimal
+
+/**
+ * Service for handling Stripe payment operations.
+ */
+@Service
+class StripeService(
+    @Value("\${stripe.api.secretKey}") private val secretKey: String,
+    private val orderService: OrderService,
+    private val productRepository: ProductRepository
+) {
+    @PostConstruct
+    fun init() {
+        Stripe.apiKey = secretKey
+    }
+
+    /**
+     * Create a payment intent for an order.
+     *
+     * @param orderId the ID of the order to create a payment for
+     * @return a Mono containing the created PaymentIntent
+     */
+    fun createPaymentIntent(orderId: Long): Mono<PaymentIntent> {
+        return orderService.getOrderById(orderId)
+            .switchIfEmpty(Mono.error(IllegalArgumentException("Order not found: $orderId")))
+            .flatMap { order ->
+                Mono.fromCallable {
+                    // Convert BigDecimal to cents (long) for Stripe
+                    val amountInCents = order.totalAmount.multiply(BigDecimal(100)).toLong()
+
+                    val params = PaymentIntentCreateParams.builder()
+                        .setAmount(amountInCents)
+                        .setCurrency("usd")
+                        .setDescription("Payment for Order #${order.id}")
+                        .putMetadata("orderId", order.id.toString())
+                        .setAutomaticPaymentMethods(
+                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                .setEnabled(true)
+                                .build()
+                        )
+                        .build()
+
+                    PaymentIntent.create(params)
+                }
+            }
+    }
+
+    /**
+     * Confirm a payment was successful and update the order status.
+     *
+     * @param paymentIntentId the ID of the payment intent
+     * @return a Mono containing the updated order
+     */
+    fun confirmPayment(paymentIntentId: String): Mono<Order> {
+        return Mono.fromCallable {
+            val paymentIntent = PaymentIntent.retrieve(paymentIntentId)
+
+            if (paymentIntent.status != "succeeded") {
+                throw IllegalStateException("Payment not successful. Status: ${paymentIntent.status}")
+            }
+
+            val orderId = paymentIntent.metadata["orderId"]?.toLong()
+                ?: throw IllegalStateException("Order ID not found in payment metadata")
+
+            orderId
+        }.flatMap { orderId ->
+            orderService.getOrderById(orderId)
+                .switchIfEmpty(Mono.error(IllegalStateException("Order not found: $orderId")))
+                .flatMap { order ->
+                    val updatedOrder = order.copy(status = "PAID")
+                    orderService.updateOrder(orderId, updatedOrder)
+                }
+        }
+    }
+
+    /**
+     * Create a Checkout Session for an order.
+     *
+     * @param orderId the ID of the order to create a checkout session for
+     * @param successUrl the URL to redirect to on successful payment
+     * @param cancelUrl the URL to redirect to if payment is cancelled
+     * @return a Mono containing the created Checkout Session
+     */
+    fun createCheckoutSession(orderId: Long, successUrl: String, cancelUrl: String): Mono<Session> {
+        return orderService.getOrderById(orderId)
+            .switchIfEmpty(Mono.error(IllegalArgumentException("Order not found: $orderId")))
+            .flatMap { order ->
+                orderService.getOrderItemsByOrderId(orderId)
+                    .flatMap { orderItem ->
+                        // Fetch product details for each order item
+                        productRepository.findById(orderItem.productId)
+                            .map { product -> Pair(orderItem, product) }
+                    }
+                    .collectList()
+                    .flatMap { orderItemsWithProducts ->
+                        if (orderItemsWithProducts.isEmpty()) {
+                            return@flatMap Mono.error(IllegalArgumentException("No items found for order: $orderId"))
+                        }
+
+                        Mono.fromCallable {
+                            val paramsBuilder = SessionCreateParams.builder()
+                                .setMode(SessionCreateParams.Mode.PAYMENT)
+                                .setSuccessUrl(successUrl)
+                                .setCancelUrl(cancelUrl)
+                                .putMetadata("orderId", order.id.toString())
+
+                            // Add each order item as a line item
+                            orderItemsWithProducts.forEach { (item, product) ->
+                                // Convert BigDecimal to cents (long) for Stripe
+                                val itemAmountInCents = item.price.multiply(BigDecimal(100)).toLong()
+
+                                paramsBuilder.addLineItem(
+                                    SessionCreateParams.LineItem.builder()
+                                        .setQuantity(item.quantity.toLong())
+                                        .setPriceData(
+                                            SessionCreateParams.LineItem.PriceData.builder()
+                                                .setCurrency("eur")
+                                                .setUnitAmount(itemAmountInCents)
+                                                .setProductData(
+                                                    SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                        .setName(product.name)
+                                                        .setDescription("Order #${order.id} - ${product.name}")
+                                                        .build()
+                                                )
+                                                .build()
+                                        )
+                                        .build()
+                                )
+                            }
+
+                            Session.create(paramsBuilder.build())
+                        }
+                    }
+            }
+    }
+}

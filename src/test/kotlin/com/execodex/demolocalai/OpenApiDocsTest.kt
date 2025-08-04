@@ -35,6 +35,7 @@ class OpenApiDocsTest {
         webTestClient.get()
             .uri("/swagger-ui.html")
             .exchange()
-            .expectStatus().isOk
+            .expectStatus().is3xxRedirection
+            .expectHeader().valueEquals("Location", "/webjars/swagger-ui/index.html")
     }
 }
