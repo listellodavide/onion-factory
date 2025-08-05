@@ -25,7 +25,7 @@ class UserErrorHandler {
                 val problemDetail = ProblemDetail.forStatus(500)
                     .apply {
                         title = "A new Internal Server Error"
-                        detail = "An unhandlerd, unexpected error occurred"
+                        detail = "An unhandlerd, unexpected error occurred ${e.message ?: "Unknown error"}"
                         type = URI.create("https://example.com/errors/internal-server-error")
                     }
                 ServerResponse.status(500)

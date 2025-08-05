@@ -3,6 +3,7 @@ package com.execodex.demolocalai.handlers
 import com.execodex.demolocalai.entities.User
 import com.execodex.demolocalai.handlers.errors.UserErrorHandler
 import com.execodex.demolocalai.service.UserService
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
@@ -18,6 +19,7 @@ class UserHandler(
     private val userService: UserService,
     private val userErrorHandler: UserErrorHandler
 ) {
+    private val logger = LoggerFactory.getLogger(UserHandler::class.java)
 
     /**
      * Get all users.
@@ -57,6 +59,7 @@ class UserHandler(
                     .bodyValue(savedUser)
             }
             .onErrorResume { error ->
+                logger.error("Error creating user: ${error.message}", error)
                 userErrorHandler.handleError(error)
             }
     }
