@@ -32,7 +32,7 @@ class CorsConfig {
             // Allow common headers
             addAllowedHeader("*")
             // Allow credentials (cookies, authorization headers, etc.)
-            allowCredentials = false
+            allowCredentials = true
             // How long the browser should cache the CORS response (in seconds)
             maxAge = 3600L
         }
