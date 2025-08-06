@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.application.name }}
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: {{ .Values.application.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.application.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.application.name }}
+    spec:
+      containers:
+      - name: app
+        image: {{ .Values.application.image.repository }}:{{ .Values.application.image.tag }}
+        imagePullPolicy: {{ .Values.application.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.application.service.targetPort }}
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: {{ .Values.config.springProfilesActive | quote }}
+        - name: SPRING_R2DBC_URL
+          value: "r2dbc:postgresql://postgres:{{ .Values.postgres.service.port }}/{{ .Values.postgres.env.POSTGRES_DB }}"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres:{{ .Values.postgres.service.port }}/{{ .Values.postgres.env.POSTGRES_DB }}"
+        - name: SPRING_AI_OPENAI_BASE_URL
+          value: {{ .Values.config.springAiOpenaiBaseUrl | quote }}
+        - name: SPRING_R2DBC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: SPRING_R2DBC_PASSWORD
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: SPRING_DATASOURCE_PASSWORD
+        - name: STRIPE_API_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: STRIPE_API_SECRET_KEY
+        - name: STRIPE_API_SECRETKEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: STRIPE_API_SECRETKEY
+        volumeMounts:
+        - name: app-config
+          mountPath: /app/config
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.application.probes.readiness.path }}
+            port: {{ .Values.application.service.targetPort }}
+          initialDelaySeconds: {{ .Values.application.probes.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.application.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.application.probes.readiness.timeoutSeconds }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.application.probes.liveness.path }}
+            port: {{ .Values.application.service.targetPort }}
+          initialDelaySeconds: {{ .Values.application.probes.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.application.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.application.probes.liveness.timeoutSeconds }}
+        resources:
+{{ toYaml .Values.application.resources | indent 10 }}
+      volumes:
+      - name: app-config
+        configMap:
+          name: app-config

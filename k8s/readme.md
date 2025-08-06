@@ -1,3 +1,7 @@
+# Kubernetes Deployment
+
+> **Note:** The application can also be deployed using Helm charts. See the [Helm chart documentation](../charts/demo-local-ai/README.md) for details.
+
 ## Running Kubernetes Locally
 
 ### Prerequisites

@@ -1,0 +1,71 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: {{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}
+        imagePullPolicy: {{ .Values.postgres.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.postgres.service.targetPort }}
+        env:
+        - name: POSTGRES_USER
+          value: {{ .Values.postgres.env.POSTGRES_USER | quote }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: SPRING_DATASOURCE_PASSWORD
+        - name: POSTGRES_DB
+          value: {{ .Values.postgres.env.POSTGRES_DB | quote }}
+        {{- if .Values.postgres.persistence.enabled }}
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        {{- end }}
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "{{ .Values.postgres.env.POSTGRES_USER }}"]
+          initialDelaySeconds: {{ .Values.postgres.probes.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.postgres.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.postgres.probes.readiness.timeoutSeconds }}
+        livenessProbe:
+          exec:
+            command: ["pg_isready", "-U", "{{ .Values.postgres.env.POSTGRES_USER }}"]
+          initialDelaySeconds: {{ .Values.postgres.probes.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.postgres.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.postgres.probes.liveness.timeoutSeconds }}
+        resources:
+{{ toYaml .Values.postgres.resources | indent 10 }}
+      {{- if .Values.postgres.persistence.enabled }}
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-data
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: {{ .Values.namespace.name }}
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: {{ .Values.postgres.service.port }}
+    targetPort: {{ .Values.postgres.service.targetPort }}
+  type: ClusterIP
+{{- end }}

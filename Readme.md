@@ -54,6 +54,17 @@ git push origin v1.0.0
 ## K8s
 read the k8s/readme.md
 
+## Helm Chart
+
+The application can also be deployed using Helm charts:
+
+1. Make sure you have Helm installed (version 3.2.0+)
+2. Deploy the application using Helm:
+   ```bash
+   helm install demo-local-ai ./charts/demo-local-ai
+   ```
+3. For customization options, see the [Helm chart documentation](./charts/demo-local-ai/README.md)
+
 ## Troubleshooting
 If you encounter issues, ensure that:
 1. stop and remove all containers and volumes:
