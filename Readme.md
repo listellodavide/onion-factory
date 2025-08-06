@@ -57,6 +57,18 @@ The API documentation provides detailed information about all available endpoint
 Add in your environment variables:
 STRIPE_API_SECRETKEY
 
+## Build an image
+`./gradlew  bootBuildImage --no-publishImage --imageName=onion-factory:latest`
+You can use your username/onion-factory:latest and skip the --no-publishImage to upload the image to your docker hub.
+But don't be an idiot and upload the image with your secret key in it.
+then try: 
+
+`docker compose -f docker-compose.dev.yaml up`
+to close:
+
+`docker compose -f docker-compose.dev.yaml down -v`
+
+
 ## Troubleshooting
 If you encounter issues, ensure that:
 1. stop and remove all containers and volumes:

@@ -1,0 +1,6 @@
+name: smollm2
+parameters:
+  model: SmolLM2-135M-Instruct-IQ4_XS.gguf
+backend: llama     # or llama-stable if using older GGML models
+threads: 4
+context_size: 512

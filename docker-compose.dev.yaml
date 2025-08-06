@@ -1,0 +1,43 @@
+services:
+  postgresdb:
+    image: ankane/pgvector:latest
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=vectordb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+
+  app:
+    image: onion-factory:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_R2DBC_URL=r2dbc:postgresql://postgresdb:5432/vectordb
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresdb:5432/vectordb
+      - SPRING_AI_OPENAI_BASE_URL=http://airunner:12432/engines
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+
+
+
+#    command: ["/usr/bin/local-ai", "--config-file", "/models/models.yaml", "--debug"]
+
+#    provider:
+#      type: model
+#      options:
+#        model: ai/smollm2
+#        runtime-flags: "--no-prefill-assistant"
+
+volumes:
+  postgres_data:

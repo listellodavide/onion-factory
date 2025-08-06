@@ -41,3 +41,5 @@ out/
 
 secrets.txt
 ./secrets.txt
+models/*.gguf
+models/*.bin
