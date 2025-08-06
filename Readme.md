@@ -18,27 +18,9 @@
 
 ## Integration Testing
 
-You can run the Java client integration test using the Gradle task:
-
-```bash
-./gradlew greetIntegrationTest
-```
 
 This task executes the greet-client-java.sh script to test the greet endpoint. Make sure the server is running before executing this task.
 
-## Using the Greet Client Script
-
-The repository includes a shell script to interact with the server's greeting endpoint:
-
-1. Make sure the server is running on localhost:8080
-2. Use the script to make GET requests to the greet endpoint:
-   ```bash
-   # Basic greeting
-   ./greet-client.sh
-   
-   # Greeting with a name parameter
-   ./greet-client.sh YourName
-   ```
 
 ## API Documentation
 
@@ -47,15 +29,12 @@ The application includes Swagger/OpenAPI documentation for all REST endpoints. O
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - OpenAPI JSON: [http://localhost:8080/api-docs](http://localhost:8080/api-docs)
 
-The API documentation provides detailed information about all available endpoints, including:
-- Request parameters
-- Request bodies
-- Response formats
-- Response codes
+
 
 ## integration with Stripe
 Add in your environment variables:
 STRIPE_API_SECRETKEY
+`stripe listen --forward-to localhost:8080/api/payments/webhook`
 
 ## Build an image
 `./gradlew  bootBuildImage --no-publishImage --imageName=onion-factory:latest`
@@ -68,6 +47,12 @@ to close:
 
 `docker compose -f docker-compose.dev.yaml down -v`
 
+## CI/CD
+git tag v1.0.0
+git push origin v1.0.0
+
+## K8s
+read the k8s/readme.md
 
 ## Troubleshooting
 If you encounter issues, ensure that:
