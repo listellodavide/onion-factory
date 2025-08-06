@@ -74,3 +74,7 @@ If you encounter issues, ensure that:
 1. stop and remove all containers and volumes:
 `docker compose down -v`
 2. Or from volumes in docker desktop delete the volumes
+
+
+#### TEMP
+#          ./gradlew bootBuildImage --imageName=${{ secrets.DOCKERHUB_USERNAME }}/onion-factory:${GITHUB_REF#refs/tags/}
