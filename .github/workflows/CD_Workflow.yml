@@ -25,5 +25,5 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push Docker image
         run: |
-          ./gradlew bootBuildImage --imageName=${{ secrets.DOCKERHUB_USERNAME }}/onion-factory:latest
+          ./gradlew bootBuildImage --imageName=${{ secrets.DOCKERHUB_USERNAME }}/onion-factory:${GITHUB_REF#refs/tags/
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/onion-factory:${GITHUB_REF#refs/tags/}
