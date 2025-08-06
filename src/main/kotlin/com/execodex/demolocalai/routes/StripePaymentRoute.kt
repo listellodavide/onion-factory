@@ -167,17 +167,17 @@ class StripePaymentRoute(private val stripePaymentHandler: StripePaymentHandler)
      */
     private fun paymentRoutes() = router {
         accept(MediaType.APPLICATION_JSON).nest {
+            // Handle Stripe webhook events
+            POST("/webhook", stripePaymentHandler::handleWebhook)
             // Create a payment intent for an order
             POST("/create-intent", stripePaymentHandler::createPaymentIntent)
 
             // Confirm a payment was successful
             POST("/confirm", stripePaymentHandler::confirmPayment)
-            
+
             // Create a checkout session for an order
             POST("/create-checkout", stripePaymentHandler::createCheckoutSession)
-            
-            // Handle Stripe webhook events
-            POST("/webhook", stripePaymentHandler::handleWebhook)
+
         }
     }
 }
