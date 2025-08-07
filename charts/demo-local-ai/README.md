@@ -88,6 +88,26 @@ helm uninstall demo-local-ai
 
 ## Configuration
 
+### Host Configuration
+
+For the application to be accessible via http://demo-local-ai.local:8080/, you need to add an entry to your hosts file:
+
+```bash
+# On Linux/macOS (including Mac M1)
+echo "127.0.0.1 demo-local-ai.local" | sudo tee -a /etc/hosts
+
+# On Windows
+# Add the following line to C:\Windows\System32\drivers\etc\hosts:
+# 127.0.0.1 demo-local-ai.local
+```
+
+#### Mac M1 Specific Configuration
+
+On Mac M1 machines, you may need to ensure:
+1. You have an ingress controller installed in your Kubernetes cluster
+2. The hosts file is properly configured as shown above
+3. Your Kubernetes service is properly exposing port 8080
+
 ### Using a custom values file
 
 To customize the deployment, create a `values.yaml` file with your changes and use it when installing the chart:
@@ -113,3 +133,36 @@ secrets:
   springDatasourcePassword: mySecurePassword
   stripeApiSecretKey: sk_test_myStripeKey
 ```
+
+## Troubleshooting
+
+### Mac M1 Specific Issues
+
+If you're using a Mac M1 and cannot access http://demo-local-ai.local:8080/:
+
+1. Verify your hosts file has been updated correctly:
+   ```bash
+   cat /etc/hosts | grep demo-local-ai.local
+   ```
+
+2. Ensure your Kubernetes ingress controller is running:
+   ```bash
+   kubectl get pods -n ingress-nginx
+   ```
+   
+   If not installed, install the NGINX Ingress Controller:
+   ```bash
+   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
+   ```
+
+3. Check if the application pods are running:
+   ```bash
+   kubectl get pods -n demo-local-ai
+   ```
+
+4. Verify the ingress resource is properly configured:
+   ```bash
+   kubectl get ingress -n demo-local-ai
+   ```
+
+5. If using Docker Desktop, ensure that port 8080 is not being used by another application.

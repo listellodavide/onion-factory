@@ -59,17 +59,35 @@ read the k8s/readme.md
 The application can also be deployed using Helm charts:
 
 1. Make sure you have Helm installed (version 3.2.0+)
-2. Deploy the application using Helm:
+2. Configure your hosts file to resolve the application hostname:
+   ```bash
+   # On Linux/macOS (including Mac M1)
+   echo "127.0.0.1 demo-local-ai.local" | sudo tee -a /etc/hosts
+   
+   # On Windows
+   # Add the following line to C:\Windows\System32\drivers\etc\hosts:
+   # 127.0.0.1 demo-local-ai.local
+   ```
+3. Deploy the application using Helm:
    ```bash
    helm install demo-local-ai ./charts/demo-local-ai
    ```
-3. For customization options, see the [Helm chart documentation](./charts/demo-local-ai/README.md)
+4. Access the application at http://demo-local-ai.local:8080/
+5. For customization options and Mac M1-specific configuration, see the [Helm chart documentation](./charts/demo-local-ai/README.md)
 
 ## Troubleshooting
 If you encounter issues, ensure that:
-1. stop and remove all containers and volumes:
-`docker compose down -v`
-2. Or from volumes in docker desktop delete the volumes
+1. Stop and remove all containers and volumes:
+   ```bash
+   docker compose down -v
+   ```
+2. Or from volumes in Docker Desktop delete the volumes
+
+### Mac M1 Specific Issues
+If you're using a Mac M1 and having trouble accessing the application after Helm installation:
+1. Verify your hosts file has been properly configured
+2. Check that the ingress controller is running
+3. See the [Helm chart troubleshooting guide](./charts/demo-local-ai/README.md#mac-m1-specific-issues) for detailed steps
 
 
 #### TEMP
