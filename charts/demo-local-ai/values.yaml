@@ -49,7 +49,7 @@ postgres:
   persistence:
     enabled: true
     size: 1Gi
-    storageClass: ""
+    storageClass: default
   env:
     POSTGRES_USER: postgres
     POSTGRES_DB: vectordb
