@@ -44,3 +44,5 @@ secrets.txt
 models/*.gguf
 models/*.bin
 #k8s/app-secrets.yaml
+charts/demo-local-ai/values-aks-dev.yaml
+charts/demo-local-ai/values-aks-prod.yaml
