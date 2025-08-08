@@ -71,9 +71,21 @@ The application can also be deployed using Helm charts:
 3. Deploy the application using Helm:
    ```bash
    helm install demo-local-ai ./charts/demo-local-ai
+   
    ```
+   to uninstall:
+   
+```bash
+    helm uninstall demo-local-ai 
+```
 4. Access the application at http://demo-local-ai.local:8080/
 5. For customization options and Mac M1-specific configuration, see the [Helm chart documentation](./charts/demo-local-ai/README.md)
+
+## AKS
+1. Create your AKS cluster
+2. add it along the local cluster 
+`az aks get-credentials --resource-group rg-ak8s-dev --name my-ak8s-dev --overwrite-existing`
+3. check with `kubectl config get-contexts`
 
 ## Troubleshooting
 If you encounter issues, ensure that:
