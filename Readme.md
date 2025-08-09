@@ -71,7 +71,7 @@ The application can also be deployed using Helm charts:
 3. Deploy the application using Helm:
    ```bash
    helm install demo-local-ai ./charts/demo-local-ai
-   
+   helm install demo-local-ai ./charts/demo-local-ai -f ./charts/demo-local-ai/values-aks-dev.yaml
    ```
    to uninstall:
    
