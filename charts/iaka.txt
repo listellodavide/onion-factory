@@ -1,0 +1,149 @@
+# Instructions for Setting Up Ingress-Nginx with Let's Encrypt on AKS
+
+This guide provides step-by-step instructions for installing and configuring ingress-nginx with Let's Encrypt SSL certificates on your AKS cluster for the demo-local-ai application.
+
+## Prerequisites
+- An AKS cluster
+- kubectl configured to communicate with your AKS cluster
+- Helm 3 installed
+
+## Step 1: Install Ingress-Nginx Controller
+
+```bash
+# Add the ingress-nginx repository
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
+# Update your Helm repositories
+helm repo update
+
+
+# Create a namespace for the ingress controller
+kubectl create namespace ingress-basic
+
+# Install the ingress-nginx controller
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+    --namespace ingress-basic \
+    --set controller.replicaCount=1 \
+    --set controller.nodeSelector."kubernetes\.io/os"=linux \
+    --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux \
+    --set controller.service.externalTrafficPolicy=Local
+
+# Verify the installation
+kubectl get all -n ingress-basic
+kubectl get service -n ingress-basic
+```
+Set up the DNS zone with the external ip
+
+## Step 2: Install Cert-Manager for Let's Encrypt Integration
+
+```bash
+# Add the Jetstack Helm repository (for cert-manager)
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+
+# Create a namespace for cert-manager
+kubectl create namespace cert-manager
+
+# Label the cert-manager namespace to disable resource validation
+kubectl label namespace cert-manager cert-manager.io/disable-validation=true
+
+# Install cert-manager with CRDs
+helm install cert-manager jetstack/cert-manager \
+    --namespace cert-manager \
+    --version v1.18.2 \
+    --set crds.enabled=true \
+    --set startupapicheck.enabled=false
+
+# Verify cert-manager installation
+kubectl get pods -n cert-manager
+```
+
+## Step 3: Configure Let's Encrypt ClusterIssuer
+
+```bash
+# Apply the ClusterIssuer configuration
+# Note: Make sure to update the email address in the cluster-issuer.yaml file if needed
+kubectl apply -f charts/nginx/cluster-issuer.yaml -n cert-manager
+
+# Verify the ClusterIssuer is ready
+kubectl get clusterissuer letsencrypt-dev -o wide -n cert-manager
+```
+
+## Step 4: Deploy the Demo-Local-AI Application with Helm
+
+# Add the ownership metadata Helm expects
+kubectl label namespace demo-local-ai app.kubernetes.io/managed-by=Helm --overwrite
+kubectl annotate namespace demo-local-ai meta.helm.sh/release-name=demo-local-ai --overwrite
+kubectl annotate namespace demo-local-ai meta.helm.sh/release-namespace=demo-local-ai --overwrite
+
+# Then install
+helm upgrade --install demo-local-ai ./charts/demo-local-ai \
+  -f ./charts/demo-local-ai/values-aks-dev.yaml \
+  --namespace demo-local-ai \
+  --create-namespace
+
+```bash
+# Install or upgrade the demo-local-ai application with the AKS values
+helm upgrade --install demo-local-ai ./charts/demo-local-ai \
+    -f ./charts/demo-local-ai/values-aks-dev.yaml \
+    --namespace demo-local-ai \
+    --create-namespace
+```
+
+## Step 5: Configure Ingress with TLS for HTTPS
+
+```bash
+# Apply the ingress configuration with TLS
+kubectl apply -f charts/nginx/myingress.yaml
+
+# Verify the ingress is created
+kubectl get ingress -n demo-local-ai
+
+# Check the status of the certificate
+kubectl get certificate -n demo-local-ai
+```
+
+## Step 6: Verify the Setup
+
+```bash
+# Get the external IP of the ingress controller
+kubectl get service ingress-nginx-controller -n ingress-basic
+
+# Check if the certificate is issued
+kubectl get certificate -n demo-local-ai
+
+# Test the HTTPS connection (replace with your domain)
+curl -k https://helloworlds.space
+```
+
+## Troubleshooting
+
+If you encounter issues with cert-manager:
+
+1. Check the cert-manager logs:
+   ```bash
+   kubectl logs -n cert-manager -l app=cert-manager
+   ```
+
+2. Check the certificate status:
+   ```bash
+   kubectl describe certificate -n demo-local-ai
+   ```
+
+3. Check the challenge status:
+   ```bash
+   kubectl get challenges -n demo-local-ai
+   ```
+
+4. If you need to reinstall cert-manager, follow the cleanup instructions:
+   ```bash
+   helm uninstall cert-manager -n cert-manager
+   kubectl delete namespace cert-manager
+   kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.crds.yaml
+   ```
+
+## Notes
+
+- The domain "helloworlds.space" is configured in values-aks-dev.yaml. Update it if you're using a different domain.
+- Make sure your domain's DNS is properly configured to point to the external IP of your ingress controller.
+- Let's Encrypt has rate limits. Use the staging server for testing by changing the server URL in cluster-issuer.yaml.

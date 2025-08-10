@@ -1,0 +1,24 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: demo-local-ai-tls-cert
+  namespace: demo-local-ai
+spec:
+  secretName: demo-local-ai-tls-cert
+  issuerRef:
+    name: letsencrypt-dev
+    kind: ClusterIssuer
+  commonName: helloworlds.space
+  dnsNames:
+  - helloworlds.space
+  subject:
+    organizations:
+    - Demo Local AI
+    organizationalUnits:
+    - Engineering
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
