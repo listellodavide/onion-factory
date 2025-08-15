@@ -14,9 +14,6 @@ helm install ingress-nginx ingress-nginx/ingress-nginx \
 uninstall
 `helm uninstall ingress-nginx -n ingress-basic`
 
-kubectl apply -f charts/nginx/myingress.yaml
-kubectl get service --namespace ingress-basic ingress-nginx-controller --output wide
-kubectl get ingress -n demo-local-ai 
 
 ## Certificate
 

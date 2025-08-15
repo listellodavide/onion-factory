@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: helloworlds-space-tls
+  namespace: demo-local-ai
+spec:
+  secretName: helloworlds-space-tls
+  dnsNames:
+    - helloworlds.space
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer

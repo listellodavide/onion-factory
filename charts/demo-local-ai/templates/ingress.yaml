@@ -5,17 +5,17 @@ metadata:
   name: {{ .Values.application.name }}-ingress
   namespace: {{ .Values.namespace.name }}
   annotations:
-    acme.cert-manager.io/http01-ingress-class: {{ .Values.ingress.className }}
-    acme.cert-manager.io/http01-edit-in-place: "true"
-    cert-manager.io/issue-temporary-certificate: "true"
-    acme.cert-manager.io/http01-solver-ingress-class: {{ .Values.ingress.className }}
-    cert-manager.io/cluster-issuer: letsencrypt-dev
+{{/*    acme.cert-manager.io/http01-ingress-class: {{ .Values.ingress.className }}*/}}
+{{/*    acme.cert-manager.io/http01-edit-in-place: "true"*/}}
+{{/*    cert-manager.io/issue-temporary-certificate: "true"*/}}
+{{/*    acme.cert-manager.io/http01-solver-ingress-class: {{ .Values.ingress.className }}*/}}
+{{/*    cert-manager.io/cluster-issuer: letsencrypt-dev*/}}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
-  tls:
-    - hosts:
-        - {{ .Values.ingress.host }}
-      secretName: {{ .Values.application.name }}-tls-cert
+{{/*  tls:*/}}
+{{/*    - hosts:*/}}
+{{/*        - {{ .Values.ingress.host }}*/}}
+{{/*      secretName: {{ .Values.application.name }}-tls-cert*/}}
   rules:
   - host: {{ .Values.ingress.host }}
     http:
