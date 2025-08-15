@@ -1,0 +1,28 @@
+<html>
+<body>
+<h1>Hello World</h1>
+<script>
+    function printRow(r, h) {
+        var spaces = ".".repeat(h - r - 1);
+        return spaces + '*'.repeat(2 * r + 1) + spaces;
+    }
+
+    function printPiramida(h) {
+        for (var i = 0; i < h; i++) {
+            console.log(printRow(i, h));
+        }
+    }
+
+    function printInverseRow(r, h) {
+        if (r == h) return "*".repeat(h);
+        return ".".repeat(h - r) + "*".repeat(h-(h-r)) + ".".repeat(h - r);
+    }
+
+    // printPiramida(5);
+    console.log(printInverseRow(1, 5));
+</script>
+
+</body>
+
+
+</html>

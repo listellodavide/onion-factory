@@ -1,0 +1,39 @@
+# Default values for tls chart
+# This is a YAML-formatted file.
+
+# Cert-manager configuration
+certManager:
+  enabled: true
+  installCRDs: true
+  startupapicheck:
+    enabled: false
+
+# ClusterIssuer configuration
+clusterIssuer:
+  # Name of the ClusterIssuer
+  name: letsencrypt-prod
+  # Let's Encrypt server URL
+  # Use https://acme-staging-v02.api.letsencrypt.org/directory for testing
+  server: https://acme-v02.api.letsencrypt.org/directory
+  # Email address used for ACME registration
+  email: admin@example.com
+  # Name of a secret used to store the ACME account private key
+  privateKeySecretRef:
+    name: letsencrypt-prod-account-key
+  # Solver configuration
+  solvers:
+    - http01:
+        ingress:
+          class: nginx
+          podTemplate:
+            spec:
+              nodeSelector:
+                "kubernetes.io/os": linux
+
+# Namespace for TLS resources
+namespace:
+  name: tls-system
+  create: true
+
+# Domain configuration
+domain: example.com

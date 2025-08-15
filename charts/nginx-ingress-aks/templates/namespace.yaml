@@ -1,0 +1,3 @@
+# This file is no longer needed as we'll use the --create-namespace flag with helm install
+# The namespace will be created by Helm before the chart is installed
+# See the updated installation instructions in NOTES.txt and README.md

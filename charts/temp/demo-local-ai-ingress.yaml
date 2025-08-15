@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-local-ai-ingress
+  namespace: demo-local-ai
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: helloworlds.space      # <-- your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demo-local-ai
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - helloworlds.space
+      secretName: helloworlds-space-tls

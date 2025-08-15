@@ -13,7 +13,7 @@ This Helm chart deploys the Demo Local AI application and its dependencies in a 
 To install the chart with the release name `demo-local-ai`:
 
 ```bash
-helm install demo-local-ai ./charts/demo-local-ai
+helm install demo-local-ai ./charts/demo-local-ai -f charts/demo-local-ai/values-aks-dev.yaml
 ```
 
 The command deploys Demo Local AI on the Kubernetes cluster with default configuration. The [Parameters](#parameters) section lists the parameters that can be configured during installation.
@@ -69,6 +69,7 @@ helm uninstall demo-local-ai
 | `ingress.enabled`     | Enable ingress                               | `true`               |
 | `ingress.className`   | Ingress class name                           | `nginx`              |
 | `ingress.host`        | Hostname for the ingress                     | `demo-local-ai.local`|
+| `ingress.clusterIssuer`| Cert-manager cluster issuer for TLS certificates | `letsencrypt-dev`  |
 
 ### Configuration Parameters
 
@@ -166,3 +167,58 @@ If you're using a Mac M1 and cannot access http://demo-local-ai.local:8080/:
    ```
 
 5. If using Docker Desktop, ensure that port 8080 is not being used by another application.
+
+## TLS Certificate Management with Let's Encrypt
+
+This chart supports automatic TLS certificate management using cert-manager and Let's Encrypt. To use this feature:
+
+1. Ensure cert-manager is installed in your cluster:
+   ```bash
+   # Add the Jetstack Helm repository
+   helm repo add jetstack https://charts.jetstack.io
+   helm repo update
+
+   # Install cert-manager with CRDs
+   helm install cert-manager jetstack/cert-manager \
+       --namespace cert-manager \
+       --create-namespace \
+       --version v1.18.2 \
+       --set crds.enabled=true \
+       --set startupapicheck.enabled=false
+   ```
+
+2. Create a ClusterIssuer for Let's Encrypt:
+   ```bash
+   # Apply the ClusterIssuer configuration
+   kubectl apply -f charts/nginx/cluster-issuer.yaml
+   ```
+
+3. Configure your ingress in values.yaml:
+   ```yaml
+   ingress:
+     enabled: true
+     className: nginx
+     host: your-domain.com
+     clusterIssuer: letsencrypt-dev  # Must match the name in your ClusterIssuer
+   ```
+
+4. Install or upgrade your chart:
+   ```bash
+   helm upgrade --install demo-local-ai ./charts/demo-local-ai \
+     -f ./charts/demo-local-ai/values-aks-dev.yaml \
+     --namespace demo-local-ai \
+     --create-namespace
+     
+   ```
+   
+   > **Note:** The chart is designed to handle both cases where the namespace exists or doesn't exist. The `--create-namespace` flag will create the namespace if it doesn't exist, and the chart will skip namespace creation if it already exists.
+
+The chart will automatically:
+- Create the namespace with proper Helm labels and annotations
+- Configure the ingress with TLS and the specified Let's Encrypt ClusterIssuer
+- Request and manage certificates for your domain
+
+You can check the status of your certificate:
+```bash
+kubectl get certificate -n demo-local-ai
+```
