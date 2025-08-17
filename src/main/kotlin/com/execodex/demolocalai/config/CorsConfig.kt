@@ -22,7 +22,11 @@ class CorsConfig {
     fun corsWebFilter(): CorsWebFilter {
         val corsConfig = CorsConfiguration().apply {
             // Allow requests from any origin
-            addAllowedOrigin("*")
+//            addAllowedOrigin("*")
+            addAllowedOriginPattern("http://localhost:5173")
+            addAllowedOriginPattern("https://helloworlds.space")
+            addAllowedOriginPattern("https://*.helloworlds.space")
+
             // Allow common HTTP methods
             addAllowedMethod("GET")
             addAllowedMethod("POST")
