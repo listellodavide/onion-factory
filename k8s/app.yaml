@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: moldovean/onion-factory:v0.0.5
+        image: moldovean/onion-factory:v0.0.7
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

@@ -2,8 +2,8 @@ apiVersion: v2
 name: demo-local-ai
 description: A Helm chart for the Demo Local AI application
 type: application
-version: 0.1.0
-appVersion: "v0.0.5"
+version: 0.1.2
+appVersion: "v0.0.7"
 maintainers:
   - name: Demo Local AI Team
 keywords:

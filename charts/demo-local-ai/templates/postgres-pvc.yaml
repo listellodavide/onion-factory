@@ -8,8 +8,9 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  {{- if .Values.postgres.persistence.storageClass }}
-  storageClassName: {{ .Values.postgres.persistence.storageClass }}
+  {{- $sc := .Values.postgres.persistence.storageClass | default "" -}}
+  {{- if and $sc (ne $sc "default") }}
+  storageClassName: {{ $sc }}
   {{- end }}
   resources:
     requests:

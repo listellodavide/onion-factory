@@ -26,15 +26,15 @@ application:
       memory: 1Gi
   probes:
     readiness:
-      path: /api-docs
-      initialDelaySeconds: 30
+      path: /hello
+      initialDelaySeconds: 45
       periodSeconds: 10
-      timeoutSeconds: 3
+      timeoutSeconds: 5
     liveness:
-      path: /api-docs
-      initialDelaySeconds: 60
+      path: /hello
+      initialDelaySeconds: 90
       periodSeconds: 20
-      timeoutSeconds: 3
+      timeoutSeconds: 5
 
 # PostgreSQL configuration
 postgres:
@@ -49,7 +49,7 @@ postgres:
   persistence:
     enabled: true
     size: 1Gi
-    storageClass: default
+    storageClass: ""
   env:
     POSTGRES_USER: postgres
     POSTGRES_DB: vectordb

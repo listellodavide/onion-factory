@@ -58,6 +58,7 @@ The application can also be deployed using Helm charts:
    ```bash
    # On Linux/macOS (including Mac M1)
    echo "127.0.0.1 demo-local-ai.local" | sudo tee -a /etc/hosts
+   echo "172.21.0.3 demo-local-ai.local" | sudo tee -a /etc/hosts
    
    # On Windows
    # Add the following line to C:\Windows\System32\drivers\etc\hosts:

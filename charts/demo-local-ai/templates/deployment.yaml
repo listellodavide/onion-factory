@@ -13,6 +13,31 @@ spec:
       labels:
         app: {{ .Values.application.name }}
     spec:
+      initContainers:
+      - name: wait-for-postgres
+        {{- $pg := .Values.postgres -}}
+        {{- if and $pg (kindIs "map" $pg) -}}
+        {{- $waiter := get $pg "waiter" -}}
+        {{- if kindIs "string" $waiter }}
+        image: {{ $waiter | default "postgres:16-alpine" }}
+        {{- else if kindIs "map" $waiter }}
+        image: {{ get $waiter "image" | default "postgres:16-alpine" }}
+        {{- else }}
+        image: postgres:16-alpine
+        {{- end }}
+        {{- else }}
+        image: postgres:16-alpine
+        {{- end }}
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh","-c"]
+        args:
+          - >-
+            echo "Waiting for Postgres at postgres:{{ .Values.postgres.service.port }}...";
+            until pg_isready -h postgres -p {{ .Values.postgres.service.port }} -U {{ .Values.postgres.env.POSTGRES_USER }}; do
+              echo "Postgres is unavailable - sleeping";
+              sleep 2;
+            done;
+            echo "Postgres is up";
       containers:
       - name: app
         image: {{ .Values.application.image.repository }}:{{ .Values.application.image.tag }}
