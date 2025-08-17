@@ -104,10 +104,7 @@ echo "127.0.0.1 demo-local-ai.local" | sudo tee -a /etc/hosts
 
 #### Mac M1 Specific Configuration
 
-On Mac M1 machines, you may need to ensure:
-1. You have an ingress controller installed in your Kubernetes cluster
-2. The hosts file is properly configured as shown above
-3. Your Kubernetes service is properly exposing port 8080
+
 
 ### Using a custom values file
 
@@ -123,7 +120,7 @@ helm install demo-local-ai ./charts/demo-local-ai -f values.yaml
 application:
   replicas: 2
   image:
-    tag: v0.0.6
+    tag: v0.0.7
 
 postgres:
   persistence:
@@ -165,60 +162,3 @@ If you're using a Mac M1 and cannot access http://demo-local-ai.local:8080/:
    ```bash
    kubectl get ingress -n demo-local-ai
    ```
-
-5. If using Docker Desktop, ensure that port 8080 is not being used by another application.
-
-## TLS Certificate Management with Let's Encrypt
-
-This chart supports automatic TLS certificate management using cert-manager and Let's Encrypt. To use this feature:
-
-1. Ensure cert-manager is installed in your cluster:
-   ```bash
-   # Add the Jetstack Helm repository
-   helm repo add jetstack https://charts.jetstack.io
-   helm repo update
-
-   # Install cert-manager with CRDs
-   helm install cert-manager jetstack/cert-manager \
-       --namespace cert-manager \
-       --create-namespace \
-       --version v1.18.2 \
-       --set crds.enabled=true \
-       --set startupapicheck.enabled=false
-   ```
-
-2. Create a ClusterIssuer for Let's Encrypt:
-   ```bash
-   # Apply the ClusterIssuer configuration
-   kubectl apply -f charts/nginx/cluster-issuer.yaml
-   ```
-
-3. Configure your ingress in values.yaml:
-   ```yaml
-   ingress:
-     enabled: true
-     className: nginx
-     host: your-domain.com
-     clusterIssuer: letsencrypt-dev  # Must match the name in your ClusterIssuer
-   ```
-
-4. Install or upgrade your chart:
-   ```bash
-   helm upgrade --install demo-local-ai ./charts/demo-local-ai \
-     -f ./charts/demo-local-ai/values-aks-dev.yaml \
-     --namespace demo-local-ai \
-     --create-namespace
-     
-   ```
-   
-   > **Note:** The chart is designed to handle both cases where the namespace exists or doesn't exist. The `--create-namespace` flag will create the namespace if it doesn't exist, and the chart will skip namespace creation if it already exists.
-
-The chart will automatically:
-- Create the namespace with proper Helm labels and annotations
-- Configure the ingress with TLS and the specified Let's Encrypt ClusterIssuer
-- Request and manage certificates for your domain
-
-You can check the status of your certificate:
-```bash
-kubectl get certificate -n demo-local-ai
-```
