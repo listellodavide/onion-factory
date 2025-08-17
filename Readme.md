@@ -16,11 +16,6 @@
    ./gradlew bootRun
    ```
 
-## Integration Testing
-
-
-This task executes the greet-client-java.sh script to test the greet endpoint. Make sure the server is running before executing this task.
-
 
 ## API Documentation
 

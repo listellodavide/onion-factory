@@ -45,10 +45,7 @@ kubectl get service -n ingress-basic ingress-nginx-controller -o jsonpath='{.sta
 
 2. Configure your DNS to point your domain (e.g., execodex.com) to this IP address.
 
-3. After DNS propagation is complete, install the cert-manager-aks chart to set up TLS:
-```bash
-helm install cert-manager-aks ./charts/cert-manager-aks
-```
+3. After DNS propagation is complete do temp
 
 ## Uninstallation
 

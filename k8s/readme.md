@@ -21,6 +21,7 @@ sudo cloud-provider-kind
 ```bash
 # Create a kind cluster
 kind create cluster --name dev1
+kind delete cluster --name dev1
 
 # Get and set the kubeconfig
 export KUBECONFIG="$(kind get kubeconfig --name=dev1)"

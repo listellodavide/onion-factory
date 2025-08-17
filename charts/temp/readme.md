@@ -17,37 +17,42 @@ helm install cert-manager jetstack/cert-manager \
 
 3
 # File: letsencrypt-staging.yaml
+```yaml
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-name: letsencrypt-staging
+  name: letsencrypt-staging
 spec:
-acme:
-server: https://acme-staging-v02.api.letsencrypt.org/directory
-email: your-email@example.com
-privateKeySecretRef:
-name: letsencrypt-staging
-solvers:
-- http01:
-ingress:
-class: nginx
+  acme:
+    # staging server (untrusted certs — for testing only)
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: net.vrabie@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+```
 
 kubectl apply -f charts/temp/letsencrypt-staging.yaml
 
 4
 # File: helloworlds-space-tls.yaml
+```yaml
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-name: helloworlds-space-tls
-namespace: demo-local-ai
+  name: helloworlds-space-tls
+  namespace: demo-local-ai
 spec:
-secretName: helloworlds-space-tls
-dnsNames:
-- helloworlds.space
-issuerRef:
-name: letsencrypt-staging
-kind: ClusterIssuer
+  secretName: helloworlds-space-tls
+  dnsNames:
+    - helloworlds.space
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer
+```
 
 kubectl apply -f helloworlds-space-tls.yaml -n demo-local-ai
 kubectl get certificate helloworlds-space-tls -n demo-local-ai -w
