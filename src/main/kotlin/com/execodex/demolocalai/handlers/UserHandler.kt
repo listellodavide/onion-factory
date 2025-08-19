@@ -3,6 +3,7 @@ package com.execodex.demolocalai.handlers
 import com.execodex.demolocalai.entities.User
 import com.execodex.demolocalai.handlers.errors.UserErrorHandler
 import com.execodex.demolocalai.pojos.GoogleUserInfo
+import com.execodex.demolocalai.pojos.UserResponse
 import com.execodex.demolocalai.service.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.Authentication
@@ -170,5 +171,50 @@ class UserHandler(
                 ServerResponse.ok().bodyValue(info)
             }
             .switchIfEmpty(ServerResponse.status(401).build())
+    }
+
+    /**
+     * Ensures the user is authenticated and returns the application user by email from the principal.
+     * - 401 if not authenticated
+     * - 400 if email not present in principal
+     * - 404 if no user exists with that email
+     */
+    fun ensureUserFromMe(request: ServerRequest): Mono<ServerResponse> {
+        return request.principal()
+            .cast(Authentication::class.java)
+            .flatMap { auth ->
+                val principal = auth.principal
+                val attributes: Map<String, Any?> = when (principal) {
+                    is OidcUser -> principal.claims
+                    is DefaultOAuth2User -> principal.attributes
+                    else -> emptyMap()
+                }
+
+                val email = attributes["email"] as? String
+                if (email.isNullOrBlank()) {
+                    return@flatMap ServerResponse.badRequest()
+                        .bodyValue(mapOf("error" to "Email not found in principal attributes"))
+                }
+
+                userService.getUserByEmail(email)
+                    .flatMap { user ->
+                        val dto = UserResponse(
+                            id = user.id,
+                            username = user.username,
+                            email = user.email,
+                            createdAt = user.createdAt,
+                            pictureUrl = user.pictureUrl
+                        )
+                        ServerResponse.ok().bodyValue(dto)
+                    }
+                    .switchIfEmpty(
+                        ServerResponse.status(404)
+                            .bodyValue(mapOf("error" to "User with email $email not found"))
+                    )
+            }
+            .switchIfEmpty(
+                ServerResponse.status(401)
+                    .bodyValue(mapOf("error" to "Unauthenticated"))
+            )
     }
 }

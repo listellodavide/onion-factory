@@ -3,6 +3,7 @@ package com.execodex.demolocalai.routes
 import com.execodex.demolocalai.entities.User
 import com.execodex.demolocalai.handlers.UserHandler
 import com.execodex.demolocalai.pojos.GoogleUserInfo
+import com.execodex.demolocalai.pojos.UserResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -272,6 +273,36 @@ class UserRoute(private val userHandler: UserHandler) {
                     )
                 ]
             )
+        ),
+        RouterOperation(
+            path = "/users/ensure-from-me",
+            beanClass = UserHandler::class,
+            beanMethod = "ensureUserFromMe",
+            method = [org.springframework.web.bind.annotation.RequestMethod.POST],
+            operation = Operation(
+                operationId = "ensureUserFromMe",
+                summary = "Ensure current user from principal",
+                description = "Ensures the request is authenticated, extracts email from principal, and returns the application user without password.",
+                responses = [
+                    ApiResponse(
+                        responseCode = "200",
+                        description = "User returned",
+                        content = [Content(schema = Schema(implementation = UserResponse::class))]
+                    ),
+                    ApiResponse(
+                        responseCode = "400",
+                        description = "Email missing in principal"
+                    ),
+                    ApiResponse(
+                        responseCode = "401",
+                        description = "Unauthenticated"
+                    ),
+                    ApiResponse(
+                        responseCode = "404",
+                        description = "User not found"
+                    )
+                ]
+            )
         )
     )
     fun userRoutes(): RouterFunction<ServerResponse> = router {
@@ -281,11 +312,12 @@ class UserRoute(private val userHandler: UserHandler) {
                 GET("/search", userHandler::searchUsers)
                 GET("/username/{username}", userHandler::getUserByUsername)
                 GET("/me", userHandler::getCurrentGoogleUser)
+                GET("/email", userHandler::getUserByEmail)
                 GET("/{id}", userHandler::getUserById)
                 POST("", userHandler::createUser)
+                POST("/ensure-from-me", userHandler::ensureUserFromMe)
                 PUT("/{id}", userHandler::updateUser)
                 DELETE("/{id}", userHandler::deleteUser)
-                GET("/email", userHandler::getUserByEmail)
             }
         }
     }

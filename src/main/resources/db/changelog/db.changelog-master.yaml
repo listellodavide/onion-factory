@@ -17,3 +17,5 @@ databaseChangeLog:
       file: db/changelog/changes/08-create-cart-table.sql
   - include:
       file: db/changelog/changes/09-create-cart-items-table.sql
+  - include:
+      file: db/changelog/changes/10-add-user-picture.sql
