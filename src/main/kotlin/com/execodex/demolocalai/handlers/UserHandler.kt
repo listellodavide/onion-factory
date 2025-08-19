@@ -2,8 +2,13 @@ package com.execodex.demolocalai.handlers
 
 import com.execodex.demolocalai.entities.User
 import com.execodex.demolocalai.handlers.errors.UserErrorHandler
+import com.execodex.demolocalai.pojos.GoogleUserInfo
 import com.execodex.demolocalai.service.UserService
 import org.slf4j.LoggerFactory
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.oauth2.core.oidc.user.OidcUser
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
@@ -126,5 +131,44 @@ class UserHandler(
         return userService.getUserByEmail(email)
             .flatMap { user -> ServerResponse.ok().bodyValue(user) }
             .switchIfEmpty(ServerResponse.notFound().build())
+    }
+
+    /**
+     * Returns the current Google-authenticated user's info based on OIDC claims.
+     * If not authenticated, returns 401 Unauthorized.
+     */
+    fun getCurrentGoogleUser(request: ServerRequest): Mono<ServerResponse> {
+        return request.principal()
+            .cast(Authentication::class.java)
+            .flatMap { auth ->
+                val principal = auth.principal
+
+                val attributes: Map<String, Any?> = when (principal) {
+                    is OidcUser -> principal.claims
+                    is DefaultOAuth2User -> principal.attributes
+                    else -> emptyMap()
+                }
+
+                val scopes: List<String> = auth.authorities
+                    .map(GrantedAuthority::getAuthority)
+                    .filter { it.startsWith("SCOPE_") }
+                    .map { it.removePrefix("SCOPE_") }
+
+                val info = GoogleUserInfo(
+                    subject = attributes["sub"] as? String,
+                    name = attributes["name"] as? String,
+                    givenName = (attributes["given_name"] ?: attributes["givenName"]) as? String,
+                    familyName = (attributes["family_name"] ?: attributes["familyName"]) as? String,
+                    picture = attributes["picture"] as? String,
+                    locale = attributes["locale"] as? String,
+                    email = attributes["email"] as? String,
+                    emailVerified = (attributes["email_verified"] as? Boolean)
+                        ?: (attributes["emailVerified"] as? Boolean),
+                    scopes = scopes
+                )
+
+                ServerResponse.ok().bodyValue(info)
+            }
+            .switchIfEmpty(ServerResponse.status(401).build())
     }
 }

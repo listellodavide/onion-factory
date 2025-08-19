@@ -73,6 +73,13 @@ spec:
             secretKeyRef:
               name: app-secrets
               key: STRIPE_API_SECRETKEY
+        - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID
+          value: {{ .Values.config.googleClientId | quote }}
+        - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET
+          valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: GOOGLE_CLIENT_SECRET
         volumeMounts:
         - name: app-config
           mountPath: /app/config

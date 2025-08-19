@@ -2,6 +2,7 @@ package com.execodex.demolocalai.routes
 
 import com.execodex.demolocalai.entities.User
 import com.execodex.demolocalai.handlers.UserHandler
+import com.execodex.demolocalai.pojos.GoogleUserInfo
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -249,6 +250,28 @@ class UserRoute(private val userHandler: UserHandler) {
                     )
                 ]
             )
+        ),
+        RouterOperation(
+            path = "/users/me",
+            beanClass = UserHandler::class,
+            beanMethod = "getCurrentGoogleUser",
+            method = [org.springframework.web.bind.annotation.RequestMethod.GET],
+            operation = Operation(
+                operationId = "getCurrentGoogleUser",
+                summary = "Get current Google user info",
+                description = "Returns OAuth2/OIDC information about the currently logged-in Google user. Returns 401 if not authenticated.",
+                responses = [
+                    ApiResponse(
+                        responseCode = "200",
+                        description = "Successful operation",
+                        content = [Content(schema = Schema(implementation = GoogleUserInfo::class))]
+                    ),
+                    ApiResponse(
+                        responseCode = "401",
+                        description = "Unauthenticated"
+                    )
+                ]
+            )
         )
     )
     fun userRoutes(): RouterFunction<ServerResponse> = router {
@@ -257,6 +280,7 @@ class UserRoute(private val userHandler: UserHandler) {
                 GET("", userHandler::getAllUsers)
                 GET("/search", userHandler::searchUsers)
                 GET("/username/{username}", userHandler::getUserByUsername)
+                GET("/me", userHandler::getCurrentGoogleUser)
                 GET("/{id}", userHandler::getUserById)
                 POST("", userHandler::createUser)
                 PUT("/{id}", userHandler::updateUser)
