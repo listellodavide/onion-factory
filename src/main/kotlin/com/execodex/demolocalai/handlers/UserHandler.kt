@@ -190,13 +190,16 @@ class UserHandler(
                     else -> emptyMap()
                 }
 
-                val email = attributes["email"] as? String
+                val email = (attributes["email"] as? String)?.trim()?.lowercase()
                 if (email.isNullOrBlank()) {
                     return@flatMap ServerResponse.badRequest()
                         .bodyValue(mapOf("error" to "Email not found in principal attributes"))
                 }
 
-                userService.getUserByEmail(email)
+                val displayName = attributes["name"] as? String
+                val pictureUrl = attributes["picture"] as? String
+
+                userService.ensureUserFromGoogleProfile(email, displayName, pictureUrl)
                     .flatMap { user ->
                         val dto = UserResponse(
                             id = user.id,
@@ -207,10 +210,6 @@ class UserHandler(
                         )
                         ServerResponse.ok().bodyValue(dto)
                     }
-                    .switchIfEmpty(
-                        ServerResponse.status(404)
-                            .bodyValue(mapOf("error" to "User with email $email not found"))
-                    )
             }
             .switchIfEmpty(
                 ServerResponse.status(401)

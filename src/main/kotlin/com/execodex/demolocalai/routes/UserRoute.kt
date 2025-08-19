@@ -282,7 +282,7 @@ class UserRoute(private val userHandler: UserHandler) {
             operation = Operation(
                 operationId = "ensureUserFromMe",
                 summary = "Ensure current user from principal",
-                description = "Ensures the request is authenticated, extracts email from principal, and returns the application user without password.",
+                description = "Ensures the request is authenticated, extracts email and profile from principal, and returns the application user (creates it if not present)." ,
                 responses = [
                     ApiResponse(
                         responseCode = "200",
@@ -296,10 +296,6 @@ class UserRoute(private val userHandler: UserHandler) {
                     ApiResponse(
                         responseCode = "401",
                         description = "Unauthenticated"
-                    ),
-                    ApiResponse(
-                        responseCode = "404",
-                        description = "User not found"
                     )
                 ]
             )
