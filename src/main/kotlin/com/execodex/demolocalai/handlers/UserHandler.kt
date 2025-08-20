@@ -3,13 +3,16 @@ package com.execodex.demolocalai.handlers
 import com.execodex.demolocalai.entities.User
 import com.execodex.demolocalai.handlers.errors.UserErrorHandler
 import com.execodex.demolocalai.pojos.GoogleUserInfo
+import com.execodex.demolocalai.pojos.GithubUserInfo
 import com.execodex.demolocalai.pojos.UserResponse
+import com.execodex.demolocalai.pojos.AuthProviderResponse
 import com.execodex.demolocalai.service.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
@@ -26,6 +29,33 @@ class UserHandler(
     private val userErrorHandler: UserErrorHandler
 ) {
     private val logger = LoggerFactory.getLogger(UserHandler::class.java)
+
+    /**
+     * Extract attributes map from a principal, supporting OIDC and generic OAuth2 users.
+     */
+    private fun extractAttributes(principal: Any?): Map<String, Any?> = when (principal) {
+        is OidcUser -> principal.claims
+        is DefaultOAuth2User -> principal.attributes
+        else -> emptyMap()
+    }
+
+    /**
+     * Detect the OAuth2/OIDC provider from the Authentication or attributes.
+     * Returns lowercase provider id (e.g., "google", "github") or "unknown" if it cannot be determined.
+     */
+    private fun detectAuthProvider(auth: Authentication, attributes: Map<String, Any?>): String {
+        return when (auth) {
+            is OAuth2AuthenticationToken -> auth.authorizedClientRegistrationId ?: "unknown"
+            else -> {
+                val iss = attributes["iss"]?.toString()?.lowercase()
+                when {
+                    iss?.contains("google") == true -> "google"
+                    attributes.containsKey("avatar_url") || iss?.contains("github") == true -> "github"
+                    else -> "unknown"
+                }
+            }
+        }
+    }
 
     /**
      * Get all users.
@@ -135,38 +165,110 @@ class UserHandler(
     }
 
     /**
-     * Returns the current Google-authenticated user's info based on OIDC claims.
+     * Returns the current authentication provider (e.g., google, github).
      * If not authenticated, returns 401 Unauthorized.
      */
-    fun getCurrentGoogleUser(request: ServerRequest): Mono<ServerResponse> {
+    fun getAuthProvider(request: ServerRequest): Mono<ServerResponse> {
         return request.principal()
             .cast(Authentication::class.java)
             .flatMap { auth ->
                 val principal = auth.principal
+                val attributes = extractAttributes(principal)
+                val provider = detectAuthProvider(auth, attributes)
+                logger.info("OAuth2 login provider detected: {}", provider)
+                ServerResponse.ok().bodyValue(AuthProviderResponse(provider = provider))
+            }
+            .switchIfEmpty(ServerResponse.status(401).build())
+    }
 
-                val attributes: Map<String, Any?> = when (principal) {
-                    is OidcUser -> principal.claims
-                    is DefaultOAuth2User -> principal.attributes
-                    else -> emptyMap()
-                }
+    /**
+     * Returns the current Google-authenticated user's info based on OIDC claims.
+     * If not authenticated, returns 401 Unauthorized.
+     */
+    fun getCurrentOAuth2User(request: ServerRequest): Mono<ServerResponse> {
+        return request.principal()
+            .cast(Authentication::class.java)
+            .flatMap { auth ->
+                val principal = auth.principal
+                logger.info("Principal: $principal")
+                when (principal) {is OidcUser -> logger.info("OIDC User: ${principal.idToken.claims}")}
+                when (principal) {is DefaultOAuth2User -> logger.info("OAuth2 User: ${principal.attributes}")}
+
+                val attributes = extractAttributes(principal)
+
+                // Determine provider (google/github) and log it
+                val provider: String = detectAuthProvider(auth, attributes)
+                logger.info("OAuth2 login provider detected: {}", provider)
 
                 val scopes: List<String> = auth.authorities
                     .map(GrantedAuthority::getAuthority)
                     .filter { it.startsWith("SCOPE_") }
                     .map { it.removePrefix("SCOPE_") }
 
-                val info = GoogleUserInfo(
-                    subject = attributes["sub"] as? String,
-                    name = attributes["name"] as? String,
-                    givenName = (attributes["given_name"] ?: attributes["givenName"]) as? String,
-                    familyName = (attributes["family_name"] ?: attributes["familyName"]) as? String,
-                    picture = attributes["picture"] as? String,
-                    locale = attributes["locale"] as? String,
-                    email = attributes["email"] as? String,
-                    emailVerified = (attributes["email_verified"] as? Boolean)
-                        ?: (attributes["emailVerified"] as? Boolean),
-                    scopes = scopes
-                )
+                val info: Any = when (provider.lowercase()) {
+                    "google" -> {
+                        GoogleUserInfo(
+                            subject = attributes["sub"] as? String,
+                            name = attributes["name"] as? String,
+                            givenName = (attributes["given_name"] ?: attributes["givenName"]) as? String,
+                            familyName = (attributes["family_name"] ?: attributes["familyName"]) as? String,
+                            picture = attributes["picture"] as? String,
+                            locale = attributes["locale"] as? String,
+                            email = attributes["email"] as? String,
+                            emailVerified = (attributes["email_verified"] as? Boolean)
+                                ?: (attributes["emailVerified"] as? Boolean),
+                            scopes = scopes
+                        )
+                    }
+                    "github" -> {
+                        val idValue = attributes["id"]
+                        val idLong: Long? = when (idValue) {
+                            is Number -> idValue.toLong()
+                            is String -> idValue.toLongOrNull()
+                            else -> null
+                        }
+                        GithubUserInfo(
+                            id = idLong,
+                            nodeId = attributes["node_id"] as? String,
+                            login = attributes["login"] as? String,
+                            name = attributes["name"] as? String,
+                            email = attributes["email"] as? String,
+                            avatarUrl = attributes["avatar_url"] as? String,
+                            htmlUrl = attributes["html_url"] as? String,
+                            url = attributes["url"] as? String,
+                            reposUrl = attributes["repos_url"] as? String,
+                            followersUrl = attributes["followers_url"] as? String,
+                            followingUrl = attributes["following_url"] as? String,
+                            gistsUrl = attributes["gists_url"] as? String,
+                            starredUrl = attributes["starred_url"] as? String,
+                            subscriptionsUrl = attributes["subscriptions_url"] as? String,
+                            organizationsUrl = attributes["organizations_url"] as? String,
+                            eventsUrl = attributes["events_url"] as? String,
+                            receivedEventsUrl = attributes["received_events_url"] as? String,
+                            bio = attributes["bio"] as? String,
+                            company = attributes["company"] as? String,
+                            blog = attributes["blog"] as? String,
+                            location = attributes["location"] as? String,
+                            twitterUsername = attributes["twitter_username"] as? String,
+                            publicRepos = (attributes["public_repos"] as? Number)?.toInt(),
+                            publicGists = (attributes["public_gists"] as? Number)?.toInt(),
+                            followers = (attributes["followers"] as? Number)?.toInt(),
+                            following = (attributes["following"] as? Number)?.toInt(),
+                            createdAt = attributes["created_at"] as? String,
+                            updatedAt = attributes["updated_at"] as? String,
+                            type = attributes["type"] as? String,
+                            siteAdmin = attributes["site_admin"] as? Boolean,
+                            scopes = scopes
+                        )
+                    }
+                    else -> {
+                        mapOf(
+                            "provider" to provider,
+                            "attributes" to attributes,
+                            "scopes" to scopes
+                        )
+                    }
+                }
 
                 ServerResponse.ok().bodyValue(info)
             }
