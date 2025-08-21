@@ -120,7 +120,7 @@ helm install demo-local-ai ./charts/demo-local-ai -f values.yaml
 application:
   replicas: 2
   image:
-    tag: v0.0.7
+    tag: v0.0.8
 
 postgres:
   persistence:

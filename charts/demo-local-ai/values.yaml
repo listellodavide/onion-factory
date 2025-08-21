@@ -11,7 +11,7 @@ application:
   replicas: 1
   image:
     repository: moldovean/onion-factory
-    tag: v0.0.7
+    tag: v0.0.8
     pullPolicy: IfNotPresent
   service:
     type: LoadBalancer

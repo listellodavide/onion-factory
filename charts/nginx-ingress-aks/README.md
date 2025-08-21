@@ -44,6 +44,10 @@ kubectl get service -n ingress-basic ingress-nginx-controller -o jsonpath='{.sta
 ```
 
 2. Configure your DNS to point your domain (e.g., execodex.com) to this IP address.
+If you are deploying on local cloud, apply a simple ingress file 
+` kubectl apply -f k8s/ingress.yaml ` and make sure
+3. /etc/hosts point to the right IP , then enjoy:
+https://demo-local-ai.local/
 
 3. After DNS propagation is complete do temp
 
