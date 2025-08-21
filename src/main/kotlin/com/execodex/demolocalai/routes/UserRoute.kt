@@ -2,6 +2,10 @@ package com.execodex.demolocalai.routes
 
 import com.execodex.demolocalai.entities.User
 import com.execodex.demolocalai.handlers.UserHandler
+import com.execodex.demolocalai.pojos.GoogleUserInfo
+import com.execodex.demolocalai.pojos.GithubUserInfo
+import com.execodex.demolocalai.pojos.UserResponse
+import com.execodex.demolocalai.pojos.AuthProviderResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -249,6 +253,76 @@ class UserRoute(private val userHandler: UserHandler) {
                     )
                 ]
             )
+        ),
+        RouterOperation(
+            path = "/users/me",
+            beanClass = UserHandler::class,
+            beanMethod = "getCurrentOAuth2User",
+            method = [org.springframework.web.bind.annotation.RequestMethod.GET],
+            operation = Operation(
+                operationId = "getCurrentOAuth2User",
+                summary = "Get current Google user info or Github user info",
+                description = "Returns OAuth2/OIDC information about the currently logged-in Google or Github user. The 200 response body can be either GoogleUserInfo or GithubUserInfo depending on the provider; clients should handle both. Returns 401 if not authenticated.",
+                responses = [
+                    ApiResponse(
+                        responseCode = "200",
+                        description = "Successful operation",
+                        content = [Content(schema = Schema(oneOf = [GoogleUserInfo::class, GithubUserInfo::class]))]
+                    ),
+                    ApiResponse(
+                        responseCode = "401",
+                        description = "Unauthenticated"
+                    )
+                ]
+            )
+        ),
+        RouterOperation(
+            path = "/users/me/provider",
+            beanClass = UserHandler::class,
+            beanMethod = "getAuthProvider",
+            method = [org.springframework.web.bind.annotation.RequestMethod.GET],
+            operation = Operation(
+                operationId = "getAuthProvider",
+                summary = "Get current authentication provider",
+                description = "Returns the OAuth2/OIDC provider name for the currently authenticated user (e.g., google, github). Returns 401 if not authenticated.",
+                responses = [
+                    ApiResponse(
+                        responseCode = "200",
+                        description = "Successful operation",
+                        content = [Content(schema = Schema(implementation = AuthProviderResponse::class))]
+                    ),
+                    ApiResponse(
+                        responseCode = "401",
+                        description = "Unauthenticated"
+                    )
+                ]
+            )
+        ),
+        RouterOperation(
+            path = "/users/ensure-from-me",
+            beanClass = UserHandler::class,
+            beanMethod = "ensureUserFromMe",
+            method = [org.springframework.web.bind.annotation.RequestMethod.POST],
+            operation = Operation(
+                operationId = "ensureUserFromMe",
+                summary = "Ensure current user from principal",
+                description = "Ensures the request is authenticated, extracts email and profile from principal, and returns the application user (creates it if not present)." ,
+                responses = [
+                    ApiResponse(
+                        responseCode = "200",
+                        description = "User returned",
+                        content = [Content(schema = Schema(implementation = UserResponse::class))]
+                    ),
+                    ApiResponse(
+                        responseCode = "400",
+                        description = "Email missing in principal"
+                    ),
+                    ApiResponse(
+                        responseCode = "401",
+                        description = "Unauthenticated"
+                    )
+                ]
+            )
         )
     )
     fun userRoutes(): RouterFunction<ServerResponse> = router {
@@ -257,11 +331,14 @@ class UserRoute(private val userHandler: UserHandler) {
                 GET("", userHandler::getAllUsers)
                 GET("/search", userHandler::searchUsers)
                 GET("/username/{username}", userHandler::getUserByUsername)
+                GET("/me", userHandler::getCurrentOAuth2User)
+                GET("/me/provider", userHandler::getAuthProvider)
+                GET("/email", userHandler::getUserByEmail)
                 GET("/{id}", userHandler::getUserById)
                 POST("", userHandler::createUser)
+                POST("/ensure-from-me", userHandler::ensureUserFromMe)
                 PUT("/{id}", userHandler::updateUser)
                 DELETE("/{id}", userHandler::deleteUser)
-                GET("/email", userHandler::getUserByEmail)
             }
         }
     }

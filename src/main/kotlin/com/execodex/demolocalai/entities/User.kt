@@ -14,5 +14,6 @@ data class User(
     val username: String,
     val password: String,
     val email: String,
+    val pictureUrl: String? = null,
     val createdAt: LocalDateTime = LocalDateTime.now()
 )
