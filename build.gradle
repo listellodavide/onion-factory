@@ -109,7 +109,7 @@ dependencyManagement {
 // Kotlin compiler options
 kotlin {
     compilerOptions {
-        freeCompilerArgs += ['-Xjsr305=strict']
+        freeCompilerArgs.addAll(['-Xjsr305=strict'])
     }
 }
 
