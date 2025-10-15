@@ -3,23 +3,20 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.spring' version '1.9.25'
     id 'org.springframework.boot' version '3.5.4'
     id 'io.spring.dependency-management' version '1.1.7'
-    id("com.gorylenko.gradle-git-properties") version "2.4.2"
+    id 'com.gorylenko.gradle-git-properties' version '2.4.2'
 }
 
 group = 'com.execodex'
 version = '0.0.1-SNAPSHOT'
 
-gitProperties {
-    keys = ['git.commit.id.abbrev', 'git.branch', 'git.build.time']
-    dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
-    dateFormatTimeZone = 'UTC'
-    failOnNoGitDirectory = false
-}
-
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+}
+
+repositories {
+    mavenCentral()
 }
 
 configurations {
@@ -28,100 +25,111 @@ configurations {
     }
 }
 
-repositories {
-    mavenCentral()
-}
-
 ext {
-    set('springAiVersion', "1.0.0")
+    springAiVersion = "1.0.0"
 }
 
 dependencies {
+    // Core Spring / Kotlin
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
     implementation 'io.projectreactor.kotlin:reactor-kotlin-extensions'
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-reactor'
+
+    // Spring AI
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
+    
+    // Database
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.liquibase:liquibase-core'
     implementation 'io.r2dbc:r2dbc-postgresql:0.8.13.RELEASE'
-    
-    // OpenAPI Documentation
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // OpenAPI / Docs
     implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.4.0'
-    // Stripe API for payment processing
+
+    // Payments
     implementation 'com.stripe:stripe-java:29.4.0'
+
+    // Security / OAuth2
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     testImplementation 'org.springframework.security:spring-security-test'
 
-
+    // Lombok
     compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Spring Boot helpers
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
     developmentOnly 'org.springframework.ai:spring-ai-spring-boot-docker-compose'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-    annotationProcessor 'org.projectlombok:lombok'
+
+    // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test'
     testImplementation 'io.r2dbc:r2dbc-h2'
-    runtimeOnly 'org.postgresql:postgresql'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// Git properties
 gitProperties {
-    keys = ["git.commit.id.abbrev", "git.branch", "git.build.time"]
+    keys = ['git.commit.id.abbrev', 'git.branch', 'git.build.time']
     dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
-    dateFormatTimeZone = "UTC"
+    dateFormatTimeZone = 'UTC'
+    failOnNoGitDirectory = false
 }
 
-tasks.withType<Jar> {
+// Jar manifest
+tasks.withType(Jar) {
     manifest {
         attributes(
-            "Implementation-Title" to project.name,
-            "Implementation-Version" to project.version,
-            "Implementation-Vendor" to "Execodex",
-            "Build-Time" to java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC),
-            "Git-Branch" to (project.findProperty("git.branch") ?: "unknown"),
-            "Git-Commit" to (project.findProperty("git.commit.id.abbrev") ?: "unknown")
+            "Implementation-Title"   : project.name,
+            "Implementation-Version" : project.version,
+            "Implementation-Vendor"  : "Execodex",
+            "Build-Time"             : java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC),
+            "Git-Branch"             : project.findProperty("git.branch") ?: "unknown",
+            "Git-Commit"             : project.findProperty("git.commit.id.abbrev") ?: "unknown"
         )
     }
 }
 
+// Dependency management for Spring AI BOM
 dependencyManagement {
     imports {
         mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
     }
 }
 
+// Kotlin compiler options
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll '-Xjsr305=strict'
+        freeCompilerArgs += ['-Xjsr305=strict']
     }
 }
 
-tasks.named<Test>("test") {
+// Use JUnit Platform for tests
+tasks.named('test') {
     useJUnitPlatform()
 }
 
-// Integration test task to run the greet-client-java.sh script
+// Integration test task
 task greetIntegrationTest(type: Exec) {
     group = 'Verification'
     description = 'Runs the greet-client-java.sh script to test the greet endpoint'
-    
-    // Set working directory to the scripts directory where GreetClient.java is located
+
     workingDir = file("${projectDir}/src/integrationTest/scripts")
     commandLine 'sh', './greet-client-java.sh'
-    
-    // Make the task depend on bootRun to ensure the application is running
-    // Note: This requires the application to be started separately
+
     doFirst {
         println "Running greet client integration test..."
     }
-    
+
     doLast {
         println "Greet client integration test completed."
     }
